@@ -46,3 +46,37 @@ export interface GameState {
   turnCount: number;
   winner?: string;
 }
+
+export enum GameEvents {
+  JOIN_GAME = "join_game",
+  LEAVE_GAME = "leave_game",
+  PLACE_SHIP = "place_ship",
+  PLACE_MINE = "place_mine",
+  ATTACK = "attack",
+  GAME_STATE = "game_state",
+  ERROR = "error",
+}
+
+export interface JoinGameDto {
+  playerId: string;
+}
+
+export interface PlaceShipDto {
+  playerId: string;
+  type: ShipType;
+  size: number;
+  start: Coordinates;
+  horizontal: boolean;
+}
+
+export interface PlaceMineDto {
+  playerId: string;
+  x: number;
+  y: number;
+}
+
+export interface AttackDto {
+  playerId: string;
+  x: number;
+  y: number;
+}
