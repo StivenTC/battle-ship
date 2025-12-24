@@ -1,21 +1,11 @@
-import { useState } from "react";
-import styles from "./App.module.scss";
+import { Grid } from "./components/game/Grid";
+import "./index.scss";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
-    <div className={styles.app}>
-      <h1>Battle Ship</h1>
-      <div className={styles.app__card}>
-        {/* BEM naming convention inside module */}
-        <button
-          className={styles.app__button}
-          type="button"
-          onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-      </div>
+    <div>
+      <h1 className="text-3xl font-bold mb-8">Battleship</h1>
+      <Grid />
     </div>
   );
 }

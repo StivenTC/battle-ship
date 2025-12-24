@@ -1,0 +1,18 @@
+@use "../../styles/tokens/variables" as *;
+@use "../../styles/tokens/mixins" as *;
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: $space-3;
+  
+  @include glass-panel;
+  border-radius: 8px;
+  
+  // Aspect ratio hack or just max-width is fine?
+  // Let's rely on cell aspect-ratio
+}

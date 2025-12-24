@@ -6,6 +6,8 @@ export enum ShipType {
   Corvette = "Corvette", // Corbeta
 }
 
+export type CellState = "EMPTY" | "SHIP" | "HIT" | "MISS";
+
 export interface Coordinates {
   x: number;
   y: number;
