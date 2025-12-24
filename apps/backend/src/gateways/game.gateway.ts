@@ -16,49 +16,50 @@ import {
   WebSocketServer,
 } from "@nestjs/websockets";
 import type { Server, Socket } from "socket.io";
-import { Game } from "../domain/Game.js";
+import type { GameManagerService } from "../services/game-manager.service.js";
 
 @WebSocketGateway({ cors: true })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
-  private game: Game;
-  // Map socketId -> playerId
-  private clients: Map<string, string> = new Map();
+  // Map socketId -> [playerId, gameId]
+  private clients: Map<string, { playerId: string; gameId?: string }> = new Map();
 
-  constructor() {
-    // For now, single game instance
-    this.game = new Game("default-game");
-  }
+  constructor(private readonly gameManager: GameManagerService) {}
 
   handleConnection(client: Socket) {
     console.log("Client connected:", client.id);
-    client.emit(GameEvents.GAME_STATE, this.game.toState());
+    // client.emit(GameEvents.GAME_STATE, ...); // Can't emit state yet, no game joined
   }
 
   handleDisconnect(client: Socket) {
     console.log("Client disconnected:", client.id);
-    const playerId = this.clients.get(client.id);
-    if (playerId) {
-      // Handle player disconnect logic if needed (reconnection capability)
-      this.clients.delete(client.id);
-    }
+    this.clients.delete(client.id);
   }
 
   @SubscribeMessage(GameEvents.JOIN_GAME)
   handleJoinGame(@MessageBody() dto: JoinGameDto, @ConnectedSocket() client: Socket) {
     try {
-      this.game.addPlayer(dto.playerId);
-      this.clients.set(client.id, dto.playerId);
+      this.clients.set(client.id, { playerId: dto.playerId });
 
-      // Auto-start if ready (simplified for now)
-      if (this.game.players.size === 2) {
-        // this.game.startGame();
-        // logic to be refined with explicit ready check
+      let game = this.gameManager.findMatch(dto.playerId);
+      if (!game) {
+        game = this.gameManager.createGame(dto.playerId);
       }
 
-      this.server.emit(GameEvents.GAME_STATE, this.game.toState());
+      game.addPlayer(dto.playerId);
+      client.join(game.id); // Socket.io rooms
+
+      const clientData = this.clients.get(client.id);
+      if (clientData) clientData.gameId = game.id;
+
+      // Auto-start check
+      if (game.players.size === 2) {
+        game.startGame();
+      }
+
+      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
     } catch (error) {
       client.emit(GameEvents.ERROR, { message: (error as Error).message });
     }
@@ -66,31 +67,24 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(GameEvents.PLACE_SHIP)
   handlePlaceShip(@MessageBody() dto: PlaceShipDto, @ConnectedSocket() client: Socket) {
-    const player = this.game.players.get(dto.playerId);
+    const clientData = this.clients.get(client.id);
+    if (!clientData?.gameId) return;
+
+    const game = this.gameManager.getGame(clientData.gameId);
+    if (!game) return;
+
+    const player = game.players.get(dto.playerId);
     if (!player) return;
 
-    if (this.game.status !== GameStatus.Placement && this.game.status !== GameStatus.Waiting) {
-      // Allow placement during waiting/placement
+    if (game.status !== GameStatus.Placement && game.status !== GameStatus.Waiting) {
       return client.emit(GameEvents.ERROR, { message: "Not in placement phase" });
     }
 
-    // Ensure status is Placement if not already
-    if (this.game.status === GameStatus.Waiting && this.game.players.size === 2) {
-      this.game.startGame();
-    }
-
-    const success = player.placeShip(
-      dto.type,
-      dto.size,
-      1, // cost placeholder
-      dto.start,
-      dto.horizontal
-    );
+    const success = player.placeShip(dto.type, dto.size, 1, dto.start, dto.horizontal);
 
     if (success) {
-      // Check ready state?
-      // player.isReady = true; // when all ships placed?
-      this.server.emit(GameEvents.GAME_STATE, this.game.toState());
+      game.checkReady(); // Check if ready to fight
+      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
     } else {
       client.emit(GameEvents.ERROR, { message: "Invalid ship placement" });
     }
@@ -98,37 +92,59 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(GameEvents.PLACE_MINE)
   handlePlaceMine(@MessageBody() dto: PlaceMineDto, @ConnectedSocket() client: Socket) {
-    const player = this.game.players.get(dto.playerId);
+    const clientData = this.clients.get(client.id);
+    if (!clientData?.gameId) return;
+
+    const game = this.gameManager.getGame(clientData.gameId);
+    if (!game) return;
+
+    const player = game.players.get(dto.playerId);
     if (!player) return;
 
-    if (this.game.status !== GameStatus.Placement) {
-      // Mines are placed during placement phase? Or anytime?
-      // Rules say: "2 hidden mines per player". Usually setup phase.
+    if (game.status !== GameStatus.Placement) {
       return client.emit(GameEvents.ERROR, { message: "Not in placement phase" });
     }
 
     const success = player.placeMine(dto.x, dto.y);
     if (success) {
-      this.server.emit(GameEvents.GAME_STATE, this.game.toState());
+      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
     } else {
       client.emit(GameEvents.ERROR, { message: "Invalid mine placement" });
     }
   }
 
   @SubscribeMessage(GameEvents.ATTACK)
-  handleAttack(@MessageBody() dto: AttackDto, @ConnectedSocket() client: Socket) {
-    if (this.game.status !== GameStatus.Combat) {
+  async handleAttack(@MessageBody() dto: AttackDto, @ConnectedSocket() client: Socket) {
+    const clientData = this.clients.get(client.id);
+    if (!clientData?.gameId) return;
+
+    const game = this.gameManager.getGame(clientData.gameId);
+    if (!game) return;
+
+    if (game.status !== GameStatus.Combat) {
       return client.emit(GameEvents.ERROR, { message: "Not in combat phase" });
     }
 
-    if (this.game.turn !== dto.playerId) {
+    if (game.turn !== dto.playerId) {
       return client.emit(GameEvents.ERROR, { message: "Not your turn" });
     }
 
-    // Logic to find opponent
-    // const opponent = ...
-    // const result = opponent.receiveAttack(dto.x, dto.y);
-    // this.game.switchTurn();
-    // this.server.emit(GameEvents.GAME_STATE, this.game.toState());
+    // Attack Logic
+    const opponentId = Array.from(game.players.keys()).find((id) => id !== dto.playerId);
+    if (!opponentId) return;
+    const opponent = game.players.get(opponentId);
+
+    if (opponent) {
+      const result = opponent.receiveAttack(dto.x, dto.y);
+
+      // CHECK WIN CONDITION
+      if (opponent.hasLost()) {
+        await this.gameManager.handleGameOver(game, dto.playerId);
+      } else {
+        game.switchTurn();
+      }
+
+      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+    }
   }
 }
