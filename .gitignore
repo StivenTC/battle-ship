@@ -31,3 +31,6 @@ yarn-error.log*
 
 # Biome
 .biome
+
+# TypeScript Build Info
+*.tsbuildinfo
