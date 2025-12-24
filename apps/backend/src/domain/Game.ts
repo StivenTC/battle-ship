@@ -1,4 +1,4 @@
-import { GameStatus, type GameState } from "@battle-ship/shared";
+import { type GameState, GameStatus } from "@battle-ship/shared";
 import { Player } from "./Player.js";
 
 export class Game {
@@ -81,7 +81,7 @@ export class Game {
         id: player.id,
         name: player.id, // Placeholder
         ships: player.ships,
-        mines: [], // TODO
+        mines: player.placedMines,
         ap: player.ap,
         isReady: player.isReady,
         isConnected: true,

@@ -14,6 +14,7 @@ export class Player {
   public ap: number;
   public mines: number;
   public isReady: boolean;
+  public placedMines: Coordinates[];
 
   constructor(id: string) {
     this.id = id;
@@ -21,6 +22,7 @@ export class Player {
     this.ships = [];
     this.ap = 1;
     this.mines = MINES_PER_PLAYER;
+    this.placedMines = [];
     this.isReady = false;
   }
 
@@ -66,6 +68,21 @@ export class Player {
         hits: [],
         isSunk: false,
       });
+      return true;
+    }
+
+    return false;
+  }
+
+  placeMine(x: number, y: number): boolean {
+    if (this.mines <= 0) {
+      return false;
+    }
+
+    const success = this.board.placeMine(x, y);
+    if (success) {
+      this.mines--;
+      this.placedMines.push({ x, y });
       return true;
     }
 

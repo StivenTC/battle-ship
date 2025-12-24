@@ -7,6 +7,7 @@ export interface Cell {
   y: number;
   state: CellState;
   shipId?: string; // If a ship is here
+  hasMine: boolean;
 }
 
 export class Board {
@@ -23,7 +24,7 @@ export class Board {
     for (let y = 0; y < GRID_SIZE; y++) {
       const row: Cell[] = [];
       for (let x = 0; x < GRID_SIZE; x++) {
-        row.push({ x, y, state: "EMPTY" });
+        row.push({ x, y, state: "EMPTY", hasMine: false });
       }
       grid.push(row);
     }
@@ -50,6 +51,20 @@ export class Board {
     }
 
     this.ships.set(id, { type, hits: 0, size });
+    return true;
+  }
+
+  placeMine(x: number, y: number): boolean {
+    if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) {
+      return false;
+    }
+
+    // Check if there is already a mine
+    if (this.grid[y][x].hasMine) {
+      return false;
+    }
+
+    this.grid[y][x].hasMine = true;
     return true;
   }
 
