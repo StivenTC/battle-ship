@@ -16,7 +16,7 @@ import {
   WebSocketServer,
 } from "@nestjs/websockets";
 import type { Server, Socket } from "socket.io";
-import type { GameManagerService } from "../services/game-manager.service.js";
+import type { GameManagerService } from "./game-manager.service.js";
 
 @WebSocketGateway({ cors: true })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {

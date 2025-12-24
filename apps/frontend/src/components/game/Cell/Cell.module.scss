@@ -1,0 +1,65 @@
+@use "../../../styles/tokens/variables" as *;
+
+.cell {
+  aspect-ratio: 1 / 1;
+  border: 1px solid color-mix(in srgb, var(--color-primary), transparent 90%);
+  background: color-mix(in srgb, var(--color-bg-deep), transparent 70%);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-in-out);
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-primary), transparent 90%);
+    box-shadow: inset 0 0 10px color-mix(in srgb, var(--color-primary), transparent 80%);
+  }
+
+  &--ship {
+    background: color-mix(in srgb, var(--color-primary), transparent 70%);
+    border-color: color-mix(in srgb, var(--color-primary), transparent 50%);
+  }
+
+  &--hit {
+    background: color-mix(in srgb, var(--color-accent-orange), transparent 80%);
+    box-shadow: inset 0 0 15px color-mix(in srgb, var(--color-accent-orange), transparent 60%);
+    border-color: var(--color-accent-orange);
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: 60%;
+      background: var(--color-accent-orange);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--color-accent-orange);
+      animation: pulse 1.5s infinite;
+    }
+  }
+
+  &--miss {
+    background: color-mix(in srgb, var(--color-danger), transparent 90%);
+    
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 60%;
+      height: 2px;
+      width: 60%;
+      height: 2px;
+      background: color-mix(in srgb, var(--color-danger), transparent 50%);
+    }
+    &::before { transform: translate(-50%, -50%) rotate(45deg); }
+    &::after { transform: translate(-50%, -50%) rotate(-45deg); }
+  }
+}
+
+@keyframes pulse {
+  0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.8; }
+}

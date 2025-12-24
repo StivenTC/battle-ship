@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
-import { AuthController } from "./controllers/auth.controller.js";
+import { AuthController } from "./features/auth/auth.controller.js";
 import { DatabaseModule } from "./database/database.module.js";
-import { GameGateway } from "./gateways/game.gateway.js";
-import { GameManagerService } from "./services/game-manager.service.js";
-import { UsersService } from "./services/users.service.js";
+import { GameGateway } from "./features/game/game.gateway.js";
+import { GameManagerService } from "./features/game/game-manager.service.js";
+import { UsersService } from "./features/users/users.service.js";
 
 @Module({
   imports: [DatabaseModule],

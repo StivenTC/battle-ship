@@ -1,5 +1,5 @@
-@use "../../styles/tokens/variables" as *;
-@use "../../styles/tokens/mixins" as *;
+@use "../../../styles/tokens/variables" as *;
+@use "../../../styles/tokens/mixins" as *;
 
 .grid {
   display: grid;
@@ -8,7 +8,7 @@
   width: 100%;
   max-width: 500px;
   margin: 0 auto;
-  padding: $space-3;
+  padding: var(--space-3);
   
   @include glass-panel;
   border-radius: 8px;

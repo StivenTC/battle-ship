@@ -1,4 +1,4 @@
-import { Grid } from "./components/game/Grid";
+import { Grid } from "./components/game/Grid/Grid";
 import "./index.scss";
 
 function App() {

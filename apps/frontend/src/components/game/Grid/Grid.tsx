@@ -1,7 +1,7 @@
 import type { CellState, GameState } from "@battle-ship/shared";
 import type { Ship } from "@battle-ship/shared";
 import type { FC } from "react";
-import { Cell } from "./Cell";
+import { Cell } from "../Cell/Cell";
 import styles from "./Grid.module.scss";
 
 // Placeholder type

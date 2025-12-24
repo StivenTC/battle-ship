@@ -1,7 +1,7 @@
 import { GameStatus } from "@battle-ship/shared";
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { Game } from "../domain/Game.js";
-import type { UsersService } from "./users.service.js";
+import { Game } from "./domain/Game.js";
+import type { UsersService } from "../users/users.service.js";
 
 @Injectable()
 export class GameManagerService {

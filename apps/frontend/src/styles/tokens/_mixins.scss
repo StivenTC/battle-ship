@@ -1,11 +1,11 @@
-@use "variables" as *;
+// Variables are now CSS Custom Properties available globally
 
 @mixin glass-panel {
-  background: $color-bg-glass;
-  backdrop-filter: blur($blur-glass);
-  -webkit-backdrop-filter: blur($blur-glass);
+  background: var(--color-bg-glass);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: $shadow-lg;
+  box-shadow: var(--shadow-lg);
 }
 
 @mixin flex-center {

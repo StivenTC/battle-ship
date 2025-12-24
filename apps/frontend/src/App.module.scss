@@ -1,5 +1,5 @@
-@use './styles/tokens/variables' as *;
-@use './styles/tokens/mixins' as *;
+@use "./styles/tokens/variables" as *;
+@use "./styles/tokens/mixins" as *;
 
 .app {
   width: 100%;
@@ -10,24 +10,27 @@
 
   &__card {
     padding: 2em;
-    @include glass; // Using mixin
+    @include glass-panel;
     border-radius: 12px;
-    margin-top: $space-l;
+    margin-top: var(--space-8);
   }
 
   &__button {
     background-color: transparent;
-    border: 1px solid $color-action;
-    color: $color-action;
+    border: 1px solid var(--color-accent-orange);
+    color: var(--color-accent-orange);
     border-radius: 8px;
     padding: 0.6em 1.2em;
     font-weight: 500;
     cursor: pointer;
-    transition: border-color $transition-base;
-    @include mobile-touch-target;
+    transition: border-color var(--duration-normal) var(--ease-in-out);
+    
+    // Mobile touch target if needed, or just padding
+    min-height: 44px; 
+    min-width: 44px;
 
     &:hover {
-      background-color : rgba($color-action, 0.1);
+      background-color : color-mix(in srgb, var(--color-accent-orange), transparent 90%);
     }
   }
 }
