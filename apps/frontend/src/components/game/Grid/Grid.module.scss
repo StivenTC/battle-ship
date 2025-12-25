@@ -1,19 +1,122 @@
-@use "../../../styles/tokens/variables" as *;
-@use "../../../styles/tokens/mixins" as *;
+@use 'sass:math';
+@use '../../../styles/tokens/variables' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
+  margin-bottom: var(--space-4);
+  width: 100%;
+  max-width: 320px;
+}
+
+.button {
+  padding: var(--space-1) var(--space-3);
+  border-radius: 4px; // Hardcoded small radius
+  font-size: 14px; // Hardcoded small font
+  background-color: var(--color-bg-surface);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--color-primary), transparent 90%);
+  }
+
+  &--active {
+    background-color: var(--color-accent-cyan);
+    color: var(--color-bg-deep);
+    border-color: var(--color-accent-cyan);
+  }
+
+  &--rotate {
+    border-color: var(--color-accent-orange);
+    color: var(--color-accent-orange);
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--color-accent-orange), transparent 90%);
+    }
+  }
+}
+
+.gridWrapper {
+  position: relative;
+  width: 320px; 
+  height: 320px; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--color-bg-deep);
+  margin: 0 auto;
+}
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 2px;
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 0;
+  grid-template-columns: repeat(8, 32px);
+  grid-template-rows: repeat(8, 32px);
+  gap: 1px;
+  background-color: color-mix(in srgb, var(--color-bg-deep), white 5%);
   position: relative;
-  
-  @include glass-panel;
-  border-radius: 8px;
-  
-  // Aspect ratio hack or just max-width is fine?
-  // Let's rely on cell aspect-ratio
+  border: 1px solid var(--color-primary);
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.shipLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.ghostLayer {
+  @extend .shipLayer;
+  z-index: 20;
+}
+
+.ship {
+  position: absolute;
+  transition: all 0.2s ease-out;
+  pointer-events: none;
+}
+
+.ghostParams {
+  position: absolute;
+  opacity: 0.6;
+  pointer-events: none;
+  transition: top 0.1s linear, left 0.1s linear;
+
+  &--valid {
+    filter: drop-shadow(0 0 4px var(--color-success));
+    
+    :global(svg) {
+        path, rect {
+             fill: color-mix(in srgb, var(--color-success), transparent 70%) !important;
+             stroke: color-mix(in srgb, var(--color-success), transparent 20%) !important;
+        }
+    }
+  }
+
+  &--invalid {
+    filter: drop-shadow(0 0 4px var(--color-danger));
+
+     :global(svg) {
+        path, rect {
+             fill: color-mix(in srgb, var(--color-danger), transparent 70%) !important;
+             stroke: color-mix(in srgb, var(--color-danger), transparent 20%) !important;
+        }
+    }
+  }
 }

@@ -30,8 +30,8 @@ export const ShipAsset: FC<ShipAssetProps> = ({ type, isVertical = false, style,
   }
 
   // Swap dimensions if vertical
-  const viewBoxWidth = width;
-  const viewBoxHeight = height;
+  const viewBoxWidth = isVertical ? height : width;
+  const viewBoxHeight = isVertical ? width : height;
 
   const finalWidth = isVertical ? height : width;
   const finalHeight = isVertical ? width : height;

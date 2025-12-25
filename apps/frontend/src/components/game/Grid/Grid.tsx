@@ -1,6 +1,7 @@
-import { type Coordinates, SHIP_NAMES_ES, ShipType } from "@battle-ship/shared";
+import { type Coordinates, SHIP_CONFIG, SHIP_NAMES_ES, ShipType } from "@battle-ship/shared";
+import clsx from "clsx";
 import type { FC } from "react";
-import { type BoardState, useBoard } from "../../../hooks/useBoard";
+import { useBoard } from "../../../hooks/useBoard";
 import { Cell } from "../Cell/Cell";
 import { ShipAsset } from "../Ships/ShipAssets";
 import styles from "./Grid.module.scss";
@@ -9,6 +10,8 @@ import styles from "./Grid.module.scss";
 type GridProps = Record<string, never>;
 
 const GRID_SIZE = 8;
+const CELL_SIZE = 32;
+const GAP_SIZE = 1;
 
 export const Grid: FC<GridProps> = () => {
   const {
@@ -18,33 +21,35 @@ export const Grid: FC<GridProps> = () => {
     handleCellHover,
     handleCellLeave,
     placeShip,
-    selectShipType, // Exposed for testing/buttons
-    toggleOrientation, // Exposed for testing/buttons
+    selectShipType,
+    toggleOrientation,
+    isValidPlacement,
   } = useBoard();
 
-  // Temporary UI for selecting ships and rotating
+  // Helper to calculate pixel position based on grid index
+  const getPosition = (index: number) => index * (CELL_SIZE + GAP_SIZE);
+
+  const handleShipSelect = (type: ShipType) => {
+    selectShipType(type);
+  };
+
   const renderControls = () => (
-    <div className="flex flex-wrap gap-2 mb-4 justify-center">
+    <div className={styles.controls}>
       {Object.values(ShipType).map((type) => (
         <button
           type="button"
           key={type}
-          onClick={() => selectShipType(type)}
-          className={`px-3 py-1 rounded text-sm ${
-            selection.type === type
-              ? "bg-[var(--color-accent-blue)] text-white"
-              : "bg-[var(--color-bg-surface)] text-[var(--color-text-main)] border border-[var(--color-radar-primary)]"
-          }`}
-          style={{
-            borderColor: selection.type === type ? "var(--color-accent-blue)" : "",
-          }}>
+          onClick={() => handleShipSelect(type)}
+          className={clsx(styles.button, {
+            [styles["button--active"]]: selection.type === type,
+          })}>
           {SHIP_NAMES_ES[type]}
         </button>
       ))}
       <button
         type="button"
         onClick={toggleOrientation}
-        className="px-3 py-1 rounded text-sm bg-[var(--color-bg-surface)] border border-[var(--color-accent-orange)] text-[var(--color-accent-orange)]">
+        className={clsx(styles.button, styles["button--rotate"])}>
         Rotar {selection.isVertical ? "↕" : "↔"}
       </button>
     </div>
@@ -54,48 +59,20 @@ export const Grid: FC<GridProps> = () => {
     return ships.map((ship) => {
       const { x, y } = ship.position[0];
       const isVertical = ship.position.length > 1 && ship.position[0].x === ship.position[1].x;
+
       return (
         <div
           key={ship.id}
+          className={styles.ship}
           style={{
-            position: "absolute",
-            left: `${x * 12.5}%`,
-            top: `${y * 12.5}%`,
-            pointerEvents: "none",
+            left: `${getPosition(x)}px`,
+            top: `${getPosition(y)}px`,
             zIndex: 10,
           }}>
-          {/* ShipAsset renders assuming 32px base, but we might need scaling if Grid is flexible. 
-              However, design system says fixed unit grid. If we use % for position, 
-              assets should ideally likely match % or be fixed. 
-              For now keeping fixed 32px base but position is fluid. */}
           <ShipAsset type={ship.type} isVertical={isVertical} />
         </div>
       );
     });
-  };
-
-  // Note: Ghost ship logic requires calculating validity again in render or hook
-  // For simplicity, we just render it at hoverCell if selection.type is set
-  const renderGhostShip = () => {
-    if (!selection.type || !hoverCell) return null;
-
-    // TODO: We technically need to know validity to color it red/green
-    // passed from hook or recalculated here.
-    // Assuming valid green for now, relying on click to block invalid.
-
-    return (
-      <div
-        style={{
-          position: "absolute",
-          left: `${hoverCell.x * 12.5}%`,
-          top: `${hoverCell.y * 12.5}%`,
-          pointerEvents: "none",
-          zIndex: 20,
-          opacity: 0.5,
-        }}>
-        <ShipAsset type={selection.type} isVertical={selection.isVertical} />
-      </div>
-    );
   };
 
   const renderCells = () => {
@@ -118,13 +95,49 @@ export const Grid: FC<GridProps> = () => {
   };
 
   return (
-    <>
+    <div className={styles.container}>
       {renderControls()}
-      <div className={styles.grid} onMouseLeave={handleCellLeave} style={{ position: "relative" }}>
-        {renderCells()}
-        {renderShips()}
-        {renderGhostShip()}
+      <div className={styles.gridWrapper}>
+        <div className={styles.grid} onMouseLeave={handleCellLeave}>
+          {renderCells()}
+          <div className={styles.shipLayer}>{renderShips()}</div>
+          <div className={styles.ghostLayer}>
+            <GhostShipOverlay
+              selection={selection}
+              hoverCell={hoverCell}
+              isValidPlacement={isValidPlacement}
+              getPosition={getPosition}
+            />
+          </div>
+        </div>
       </div>
-    </>
+    </div>
+  );
+};
+
+// Internal Helper Component for Ghost Ship
+const GhostShipOverlay: FC<{
+  selection: { type: ShipType | null; isVertical: boolean };
+  hoverCell: Coordinates | null;
+  isValidPlacement: (start: Coordinates, size: number, vertical: boolean) => boolean;
+  getPosition: (index: number) => number;
+}> = ({ selection, hoverCell, isValidPlacement, getPosition }) => {
+  if (!selection.type || !hoverCell) return null;
+
+  const size = SHIP_CONFIG[selection.type].size;
+  const valid = isValidPlacement(hoverCell, size, selection.isVertical);
+
+  return (
+    <div
+      className={clsx(styles.ghostParams, {
+        [styles["ghostParams--valid"]]: valid,
+        [styles["ghostParams--invalid"]]: !valid,
+      })}
+      style={{
+        left: `${getPosition(hoverCell.x)}px`,
+        top: `${getPosition(hoverCell.y)}px`,
+      }}>
+      <ShipAsset type={selection.type} isVertical={selection.isVertical} />
+    </div>
   );
 };
