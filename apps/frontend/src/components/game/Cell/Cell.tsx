@@ -8,9 +8,10 @@ interface CellProps {
   y: number;
   state: CellState;
   onClick: (x: number, y: number) => void;
+  onMouseEnter?: () => void;
 }
 
-export const Cell: FC<CellProps> = ({ x, y, state, onClick }) => {
+export const Cell: FC<CellProps> = ({ x, y, state, onClick, onMouseEnter }) => {
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" || e.key === " ") {
       onClick(x, y);
@@ -28,6 +29,7 @@ export const Cell: FC<CellProps> = ({ x, y, state, onClick }) => {
         [styles["cell--miss"]]: state === "MISS",
       })}
       onClick={() => onClick(x, y)}
+      onMouseEnter={onMouseEnter}
       onKeyDown={handleKeyDown}
       data-testid={`cell-${x}-${y}`}
     />

@@ -6,6 +6,14 @@ export enum ShipType {
   Corvette = "Corvette", // Corbeta
 }
 
+export const SHIP_NAMES_ES: Record<ShipType, string> = {
+  [ShipType.Carrier]: "Portaviones",
+  [ShipType.Battleship]: "Acorazado",
+  [ShipType.Destroyer]: "Destructor",
+  [ShipType.Submarine]: "Submarino",
+  [ShipType.Corvette]: "Corbeta",
+};
+
 export type CellState = "EMPTY" | "SHIP" | "HIT" | "MISS";
 
 export interface Coordinates {

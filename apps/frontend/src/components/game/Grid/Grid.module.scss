@@ -8,7 +8,8 @@
   width: 100%;
   max-width: 500px;
   margin: 0 auto;
-  padding: var(--space-3);
+  padding: 0;
+  position: relative;
   
   @include glass-panel;
   border-radius: 8px;
