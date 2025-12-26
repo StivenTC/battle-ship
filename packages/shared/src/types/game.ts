@@ -58,6 +58,7 @@ export interface GameState {
 }
 
 export enum GameEvents {
+  CREATE_GAME = "create_game",
   JOIN_GAME = "join_game",
   LEAVE_GAME = "leave_game",
   PLACE_SHIP = "place_ship",

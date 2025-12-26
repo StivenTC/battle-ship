@@ -14,7 +14,9 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@battle-ship/shared": ["../../packages/shared/src/index.ts"]
     }
-  }
+  },
+  "include": ["src", "../../packages/shared/src"]
 }

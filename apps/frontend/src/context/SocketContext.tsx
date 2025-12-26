@@ -4,11 +4,13 @@ import { type Socket, io } from "socket.io-client";
 interface SocketContextType {
   socket: Socket | null;
   isConnected: boolean;
+  connectionError: string | null;
 }
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
   isConnected: false,
+  connectionError: null,
 });
 
 export const useSocket = () => useContext(SocketContext);
@@ -19,6 +21,7 @@ const SERVER_URL = "http://localhost:3000";
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   useEffect(() => {
     const newSocket = io(SERVER_URL, {
@@ -29,11 +32,18 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     newSocket.on("connect", () => {
       console.log("Socket connected:", newSocket.id);
       setIsConnected(true);
+      setConnectionError(null);
     });
 
     newSocket.on("disconnect", () => {
       console.log("Socket disconnected");
       setIsConnected(false);
+    });
+
+    newSocket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err);
+      setIsConnected(false);
+      setConnectionError("No se pudo conectar al servidor.");
     });
 
     setSocket(newSocket);
@@ -44,6 +54,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected }}>{children}</SocketContext.Provider>
+    <SocketContext.Provider value={{ socket, isConnected, connectionError }}>
+      {children}
+    </SocketContext.Provider>
   );
 };

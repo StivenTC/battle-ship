@@ -19,3 +19,14 @@
   letter-spacing: 0.1em;
   text-shadow: 0 0 10px var(--color-primary-dim);
 }
+
+.gameInfo {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-4);
+    font-size: 1rem;
+    
+    strong {
+        color: var(--color-energy);
+        font-family: var(--font-mono);
+    }
+}

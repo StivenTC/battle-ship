@@ -2,6 +2,7 @@ import { type Coordinates, SHIP_CONFIG, SHIP_NAMES_ES, ShipType } from "@battle-
 import clsx from "clsx";
 import type { FC } from "react";
 import { useBoard } from "../../../hooks/useBoard";
+import { useGame } from "../../../hooks/useGame";
 import { Cell } from "../Cell/Cell";
 import { ShipAsset } from "../Ships/ShipAssets";
 import styles from "./Grid.module.scss";
@@ -14,23 +15,46 @@ const CELL_SIZE = 32;
 const GAP_SIZE = 1;
 
 export const Grid: FC<GridProps> = () => {
+  const { gameState, playerId, actions } = useGame();
+
   const {
-    ships,
+    ships: localShips,
     selection,
     hoverCell,
     handleCellHover,
     handleCellLeave,
-    placeShip,
+    placeShip: placeLocalShip, // Renamed to avoid config
     selectShipType,
     toggleOrientation,
     isValidPlacement,
   } = useBoard();
+
+  // DERIVE SHIPS: Use Server state if available, otherwise local (for now/fallback)
+  // In a real game, we rely on gameState.players[playerId].ships
+  const myPlayer = gameState && playerId ? gameState.players[playerId] : null;
+  const displayShips = myPlayer ? myPlayer.ships : localShips;
 
   // Helper to calculate pixel position based on grid index
   const getPosition = (index: number) => index * (CELL_SIZE + GAP_SIZE);
 
   const handleShipSelect = (type: ShipType) => {
     selectShipType(type);
+  };
+
+  const onCellClick = (x: number, y: number) => {
+    if (!selection.type) return;
+
+    // Server Action
+    if (gameState && myPlayer) {
+      // Validate locally first for instant feedback (optional but good UX)
+      // Note: isValidPlacement needs to check against 'displayShips', but useBoard checks 'localShips'.
+      // We might need to sync them or just rely on server.
+      // For simplicity: Just emit. Server validates.
+      actions.placeShip(selection.type, { x, y }, selection.isVertical);
+    } else {
+      // Local fallback
+      placeLocalShip(x, y);
+    }
   };
 
   const renderControls = () => (
@@ -56,7 +80,7 @@ export const Grid: FC<GridProps> = () => {
   );
 
   const renderShips = () => {
-    return ships.map((ship) => {
+    return displayShips.map((ship) => {
       const { x, y } = ship.position[0];
       const isVertical = ship.position.length > 1 && ship.position[0].x === ship.position[1].x;
 
@@ -85,7 +109,7 @@ export const Grid: FC<GridProps> = () => {
             x={x}
             y={y}
             state={"EMPTY"}
-            onClick={(gx, gy) => placeShip(gx, gy)} // gx, gy are just args passed back
+            onClick={(gx, gy) => onCellClick(gx, gy)}
             onMouseEnter={() => handleCellHover(x, y)}
           />
         );
