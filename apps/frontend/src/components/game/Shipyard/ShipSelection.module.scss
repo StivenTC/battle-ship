@@ -1,0 +1,154 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+  max-width: 800px;
+  padding: 2rem;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid #334155;
+}
+
+.title {
+  color: #06b6d4;
+  font-size: 2rem;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  color: #94a3b8;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover:not(.disabled) {
+    border-color: #06b6d4;
+    transform: translateY(-2px);
+  }
+
+  &.selected {
+    border-color: #06b6d4;
+    background: rgba(6, 182, 212, 0.1);
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+
+    &::after {
+      content: "✓";
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      color: #06b6d4;
+      font-weight: bold;
+    }
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.8);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.shipName {
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.shipSize {
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.shipPreview {
+  height: 60px;
+  background: rgba(0, 0, 0, 0.2);
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  font-size: 0.75rem;
+}
+
+.cardFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.skillLabel {
+  color: #38bdf8;
+}
+
+.costLabel {
+  color: #e2e8f0;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  border-top: 1px solid #334155;
+  padding-top: 1.5rem;
+}
+
+.counter {
+  color: #f1f5f9;
+}
+
+.confirmButton {
+  background: #06b6d4;
+  color: white;
+  border: none;
+  padding: 1rem 3rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+
+  &:hover:not(:disabled) {
+    background: #0891b2;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #475569;
+  }
+}

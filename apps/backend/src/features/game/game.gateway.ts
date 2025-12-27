@@ -18,6 +18,7 @@ import {
 import type { Server, Socket } from "socket.io";
 // biome-ignore lint/style/useImportType: dependency injection requires value import
 import { GameManagerService } from "./game-manager.service.js";
+import { Game } from "./domain/Game.js";
 
 @WebSocketGateway({ cors: true })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -40,9 +41,11 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage(GameEvents.CREATE_GAME)
-  handleCreateGame(@ConnectedSocket() client: Socket) {
+  handleCreateGame(@MessageBody() dto: { playerId: string }, @ConnectedSocket() client: Socket) {
     try {
-      const playerId = client.id;
+      const playerId = dto.playerId;
+      // Important: Map socket to player so we can track disconnects if needed,
+      // but primarily we rely on the playerId sent in events.
       this.clients.set(client.id, { playerId });
 
       const game = this.gameManager.createGame(playerId);
@@ -61,12 +64,23 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(GameEvents.JOIN_GAME)
   handleJoinGame(@MessageBody() dto: JoinGameDto, @ConnectedSocket() client: Socket) {
+    console.log("Backend received JOIN_GAME DTO:", dto);
     try {
       this.clients.set(client.id, { playerId: dto.playerId });
 
-      let game = this.gameManager.findMatch(dto.playerId);
-      if (!game) {
-        game = this.gameManager.createGame(dto.playerId);
+      let game: Game | undefined;
+
+      if (dto.gameId) {
+        game = this.gameManager.getGame(dto.gameId);
+        if (!game) {
+          throw new Error("Game not found");
+        }
+      } else {
+        // Random match fallback
+        game = this.gameManager.findMatch(dto.playerId);
+        if (!game) {
+          game = this.gameManager.createGame(dto.playerId);
+        }
       }
 
       game.addPlayer(dto.playerId);

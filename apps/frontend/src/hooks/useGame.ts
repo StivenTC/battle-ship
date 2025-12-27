@@ -1,9 +1,18 @@
-import { GameEvents, type GameState, type Coordinates, type ShipType } from "@battle-ship/shared";
+import {
+  GameEvents,
+  type GameState,
+  type Coordinates,
+  type ShipType,
+  type PlaceShipDto,
+  type AttackDto,
+} from "@battle-ship/shared";
 import { useEffect, useState } from "react";
 import { useSocket } from "../context/SocketContext";
+import { useUser } from "../context/UserContext";
 
 export const useGame = () => {
   const { socket, connectionError } = useSocket();
+  const { userId } = useUser();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,48 +47,45 @@ export const useGame = () => {
   }, [socket]);
 
   const createGame = () => {
-    if (!socket) return;
+    if (!socket || !userId) return;
     setLoading(true);
-    socket.emit(GameEvents.CREATE_GAME);
+    socket.emit(GameEvents.CREATE_GAME, { playerId: userId });
   };
 
   const joinGame = (gameId: string) => {
-    if (!socket) return;
+    if (!socket || !userId) return;
+    console.log("Frontend emitting JOIN_GAME with ID:", gameId, "Player:", userId);
     setLoading(true);
-    socket.emit(GameEvents.JOIN_GAME, { gameId, playerId: socket.id });
+    socket.emit(GameEvents.JOIN_GAME, { gameId, playerId: userId });
   };
 
   const placeShip = (type: ShipType, start: Coordinates, horizontal: boolean) => {
-    if (!socket || !gameState) return;
-    socket.emit(GameEvents.PLACE_SHIP, {
-      playerId: socket.id,
-      gameId: gameState.id,
+    if (!socket || !gameState || !userId) return;
+    const dto: PlaceShipDto = {
+      playerId: userId,
       type,
       start,
       horizontal,
-      size: 0, // Server knows size? Or we send it. Shared types say size is needed logic wise usually, but checking backend implementation... backend uses dto.size. We should look up size from config or let backend handle strictness. Let's pass it if needed or rely on constants.
-      // Wait, let's check backend implementation..
-      // handlePlaceShip(@MessageBody() dto: PlaceShipDto...
-      // PlaceShipDto usually needs size. Let's assume we pass it from UI.
-      // For now, simple emit.
-    });
+      size: 0,
+    };
+    socket.emit(GameEvents.PLACE_SHIP, dto);
   };
 
   const attack = (x: number, y: number) => {
-    if (!socket || !gameState) return;
-    socket.emit(GameEvents.ATTACK, {
-      playerId: socket.id,
-      gameId: gameState.id,
+    if (!socket || !gameState || !userId) return;
+    const dto: AttackDto = {
+      playerId: userId,
       x,
       y,
-    });
+    };
+    socket.emit(GameEvents.ATTACK, dto);
   };
 
   return {
     gameState,
     error,
     loading,
-    playerId: socket?.id,
+    playerId: userId,
     actions: {
       createGame,
       joinGame,

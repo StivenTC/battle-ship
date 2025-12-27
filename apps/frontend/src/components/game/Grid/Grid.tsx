@@ -8,13 +8,15 @@ import { ShipAsset } from "../Ships/ShipAssets";
 import styles from "./Grid.module.scss";
 
 // Placeholder type until we connect it to a parent context
-type GridProps = Record<string, never>;
+type GridProps = {
+  allowedShips?: ShipType[];
+};
 
 const GRID_SIZE = 8;
 const CELL_SIZE = 32;
 const GAP_SIZE = 1;
 
-export const Grid: FC<GridProps> = () => {
+export const Grid: FC<GridProps> = ({ allowedShips }) => {
   const { gameState, playerId, actions } = useGame();
 
   const {
@@ -57,27 +59,31 @@ export const Grid: FC<GridProps> = () => {
     }
   };
 
-  const renderControls = () => (
-    <div className={styles.controls}>
-      {Object.values(ShipType).map((type) => (
+  const renderControls = () => {
+    const shipsToShow = allowedShips || (Object.values(ShipType) as ShipType[]);
+
+    return (
+      <div className={styles.controls}>
+        {shipsToShow.map((type) => (
+          <button
+            type="button"
+            key={type}
+            onClick={() => handleShipSelect(type)}
+            className={clsx(styles.button, {
+              [styles["button--active"]]: selection.type === type,
+            })}>
+            {SHIP_NAMES_ES[type]} ({SHIP_CONFIG[type].size})
+          </button>
+        ))}
         <button
           type="button"
-          key={type}
-          onClick={() => handleShipSelect(type)}
-          className={clsx(styles.button, {
-            [styles["button--active"]]: selection.type === type,
-          })}>
-          {SHIP_NAMES_ES[type]}
+          onClick={toggleOrientation}
+          className={clsx(styles.button, styles["button--rotate"])}>
+          Rotar {selection.isVertical ? "↕" : "↔"}
         </button>
-      ))}
-      <button
-        type="button"
-        onClick={toggleOrientation}
-        className={clsx(styles.button, styles["button--rotate"])}>
-        Rotar {selection.isVertical ? "↕" : "↔"}
-      </button>
-    </div>
-  );
+      </div>
+    );
+  };
 
   const renderShips = () => {
     return displayShips.map((ship) => {

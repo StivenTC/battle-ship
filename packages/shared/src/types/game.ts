@@ -68,8 +68,13 @@ export enum GameEvents {
   ERROR = "error",
 }
 
+export interface CreateGameDto {
+  playerId: string;
+}
+
 export interface JoinGameDto {
   playerId: string;
+  gameId?: string;
 }
 
 export interface PlaceShipDto {
