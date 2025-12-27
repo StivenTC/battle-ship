@@ -148,6 +148,23 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage(GameEvents.PLAYER_READY)
+  handlePlayerReady(@MessageBody() dto: { playerId: string }, @ConnectedSocket() client: Socket) {
+    const clientData = this.clients.get(client.id);
+    if (!clientData?.gameId) return;
+
+    const game = this.gameManager.getGame(clientData.gameId);
+    if (!game) return;
+
+    const player = game.players.get(dto.playerId);
+    if (!player) return;
+
+    player.setReady();
+    game.checkReady();
+
+    this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+  }
+
   @SubscribeMessage(GameEvents.ATTACK)
   async handleAttack(@MessageBody() dto: AttackDto, @ConnectedSocket() client: Socket) {
     const clientData = this.clients.get(client.id);

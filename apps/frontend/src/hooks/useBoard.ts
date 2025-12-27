@@ -11,7 +11,7 @@ export interface BoardState {
   ships: Ship[];
   placedMines: Coordinates[];
   selection: {
-    type: ShipType | null;
+    type: ShipType | "MINE" | null;
     isVertical: boolean;
   };
   hoverCell: Coordinates | null;
@@ -21,12 +21,12 @@ export const useBoard = () => {
   const [ships, setShips] = useState<Ship[]>([]);
   const [placedMines, setPlacedMines] = useState<Coordinates[]>([]);
   const [selection, setSelection] = useState<{
-    type: ShipType | null;
+    type: ShipType | "MINE" | null;
     isVertical: boolean;
   }>({ type: null, isVertical: false });
   const [hoverCell, setHoverCell] = useState<Coordinates | null>(null);
 
-  const selectShipType = (type: ShipType) => {
+  const selectShipType = (type: ShipType | "MINE") => {
     setSelection((prev) => ({ ...prev, type }));
   };
 
@@ -40,7 +40,6 @@ export const useBoard = () => {
       const x = vertical ? start.x : start.x + i;
       const y = vertical ? start.y + i : start.y;
 
-      // Check bounds
       if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) {
         return false;
       }
@@ -52,9 +51,17 @@ export const useBoard = () => {
       for (const pos of ship.position) {
         for (const newPos of positions) {
           if (pos.x === newPos.x && pos.y === newPos.y) {
-            console.warn("Invalid placement: Overlap detected at", pos);
             return false;
           }
+        }
+      }
+    }
+
+    // Check overlap with mines
+    for (const mine of placedMines) {
+      for (const newPos of positions) {
+        if (mine.x === newPos.x && mine.y === newPos.y) {
+          return false;
         }
       }
     }
@@ -65,9 +72,17 @@ export const useBoard = () => {
   const placeShip = (x: number, y: number) => {
     if (!selection.type) return;
 
+    if (selection.type === "MINE") {
+      if (isValidPlacement({ x, y }, 1, false)) {
+        setPlacedMines((prev) => [...prev, { x, y }]);
+        setSelection((prev) => ({ ...prev, type: null }));
+      }
+      return;
+    }
+
     const config = SHIP_CONFIG[selection.type];
     if (!isValidPlacement({ x, y }, config.size, selection.isVertical)) {
-      return; // Invalid placement visual feedback handled by UI
+      return;
     }
 
     const newShip: Ship = {
@@ -88,7 +103,7 @@ export const useBoard = () => {
     }
 
     setShips((prev) => [...prev, newShip]);
-    setSelection({ type: null, isVertical: selection.isVertical }); // Reset selection but keep orientation
+    setSelection({ type: null, isVertical: selection.isVertical });
   };
 
   const handleCellHover = (x: number, y: number) => {

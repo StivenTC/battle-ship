@@ -81,7 +81,8 @@ export class Game {
         id: player.id,
         name: player.id, // Placeholder
         ships: player.ships,
-        mines: player.placedMines,
+        remainingMines: player.mines,
+        placedMines: player.placedMines,
         ap: player.ap,
         isReady: player.isReady,
         isConnected: true,

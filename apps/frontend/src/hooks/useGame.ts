@@ -4,6 +4,7 @@ import {
   type Coordinates,
   type ShipType,
   type PlaceShipDto,
+  type PlaceMineDto,
   type AttackDto,
 } from "@battle-ship/shared";
 import { useEffect, useState } from "react";
@@ -81,6 +82,21 @@ export const useGame = () => {
     socket.emit(GameEvents.ATTACK, dto);
   };
 
+  const placeMine = (x: number, y: number) => {
+    if (!socket || !gameState || !userId) return;
+    const dto: PlaceMineDto = {
+      playerId: userId,
+      x,
+      y,
+    };
+    socket.emit(GameEvents.PLACE_MINE, dto);
+  };
+
+  const playerReady = () => {
+    if (!socket || !userId) return;
+    socket.emit(GameEvents.PLAYER_READY, { playerId: userId });
+  };
+
   return {
     gameState,
     error,
@@ -90,6 +106,8 @@ export const useGame = () => {
       createGame,
       joinGame,
       placeShip,
+      placeMine,
+      playerReady,
       attack,
     },
   };

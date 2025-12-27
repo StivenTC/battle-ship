@@ -92,6 +92,18 @@
   pointer-events: none;
 }
 
+.mine {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  z-index: 10;
+  font-size: 20px;
+}
+
 .ghostParams {
   position: absolute;
   opacity: 0.6;

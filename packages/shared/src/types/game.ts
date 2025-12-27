@@ -35,7 +35,8 @@ export interface Player {
   id: string;
   name: string;
   ships: Ship[];
-  mines: Coordinates[];
+  remainingMines: number;
+  placedMines: Coordinates[];
   ap: number;
   isReady: boolean;
   isConnected: boolean;
@@ -63,6 +64,7 @@ export enum GameEvents {
   LEAVE_GAME = "leave_game",
   PLACE_SHIP = "place_ship",
   PLACE_MINE = "place_mine",
+  PLAYER_READY = "player_ready",
   ATTACK = "attack",
   GAME_STATE = "game_state",
   ERROR = "error",

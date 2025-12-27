@@ -26,6 +26,10 @@ export class Player {
     this.isReady = false;
   }
 
+  setReady() {
+    this.isReady = true;
+  }
+
   regenerateAP() {
     if (this.ap < MAX_AP) {
       this.ap++;

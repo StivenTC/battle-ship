@@ -38,20 +38,26 @@ export const ShipAsset: FC<ShipAssetProps> = ({ type, isVertical = false, style,
   const viewBoxWidth = isVertical ? height : width;
   const viewBoxHeight = isVertical ? width : height;
 
-  const finalWidth = isVertical ? height : width;
-  const finalHeight = isVertical ? width : height;
-
   const commonStyle = {
     ...style,
-    width: finalWidth,
-    height: finalHeight,
+    width: viewBoxWidth,
+    height: viewBoxHeight,
     display: "block",
-    overflow: "visible", // Allow stroke to not be clipped
+    overflow: "visible",
   };
 
-  const transform = isVertical ? `rotate(90, ${height / 2}, ${height / 2})` : undefined;
+  // If vertical, we need to rotate the internal group or the SVG itself.
+  // The logic `rotate(90, height/2, height/2)` assumes square pivot, which might push long ships out of view.
+  // Better approach: If vertical, just rotate the <g> around (0,0) and translate if needed?
+  // Actually, standard SVG rotation: rotate(90) rotates around 0,0.
+  // If we rotate 90, x becomes vertical -y.
+  // Let's try simpler: Render horizontal, and rotate the DIV wrapper in Grid.tsx?
+  // Previous code had rotation in `ShipAsset`. Let's stick to that but fix it.
 
-  // Colors from CSS variables
+  // Rotating around the top-left cell center (16,16) might be safer?
+  // transform={`rotate(90, ${CELL_SIZE/2}, ${CELL_SIZE/2})`}
+  const transform = isVertical ? `rotate(90, ${CELL_SIZE / 2}, ${CELL_SIZE / 2})` : undefined;
+
   const strokeColor = "var(--color-radar-primary)";
   const fillColor = "var(--color-radar-dim)";
 
