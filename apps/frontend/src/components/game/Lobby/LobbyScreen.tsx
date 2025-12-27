@@ -33,10 +33,10 @@ export const LobbyScreen: FC<LobbyScreenProps> = ({ onCreate, onJoin, error, loa
           <input
             className={styles.input}
             type="text"
-            placeholder="ID de Partida"
+            placeholder="ID de Partida (4 Letras)"
             value={joinId}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setJoinId(e.target.value.toUpperCase())}
-            maxLength={10}
+            maxLength={4}
           />
           <button
             type="button"

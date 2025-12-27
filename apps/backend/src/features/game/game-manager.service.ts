@@ -14,11 +14,22 @@ export class GameManagerService {
   }
 
   createGame(hostId: string): Game {
-    const gameId = crypto.randomUUID();
+    let gameId = this.generateRoomCode();
+    while (this.games.has(gameId)) {
+      gameId = this.generateRoomCode();
+    }
     const game = new Game(gameId);
     this.games.set(gameId, game);
-    // game.addPlayer(hostId); // Host automatically joins? Usually yes.
     return game;
+  }
+
+  private generateRoomCode(): string {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 4; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
   }
 
   getGame(gameId: string): Game | undefined {
