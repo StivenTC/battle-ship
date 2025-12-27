@@ -102,7 +102,11 @@ export const useBoard = () => {
       });
     }
 
-    setShips((prev) => [...prev, newShip]);
+    setShips((prev) => {
+      // Remove existing ship of same type to enforce 1 per type
+      const filtered = prev.filter((s) => s.type !== selection.type);
+      return [...filtered, newShip];
+    });
     setSelection({ type: null, isVertical: selection.isVertical });
   };
 

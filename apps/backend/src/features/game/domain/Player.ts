@@ -52,6 +52,10 @@ export class Player {
     horizontal: boolean
   ): boolean {
     const shipId = crypto.randomUUID();
+    // Remove existing ship of this type from board and list
+    this.board.removeShipByType(type);
+    this.ships = this.ships.filter((s) => s.type !== type);
+
     const success = this.board.placeShip(shipId, type, size, start, horizontal);
 
     if (success) {

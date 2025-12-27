@@ -40,6 +40,14 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
   // DERIVE SHIPS: Use Server state if available, otherwise local (for now/fallback)
   // In a real game, we rely on gameState.players[playerId].ships
   const myPlayer = gameState && playerId ? gameState.players[playerId] : null;
+
+  if (!myPlayer && gameState) {
+    console.warn("Grid: myPlayer is null but gameState exists!", {
+      playerId,
+      players: gameState.players,
+    });
+  }
+
   const displayShips = myPlayer ? myPlayer.ships : localShips;
 
   // Helper to calculate pixel position based on grid index
@@ -66,6 +74,7 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
   };
 
   const renderControls = () => {
+    // If allowedShips is provided, ONLY show those. Otherwise show all.
     const shipsToShow = allowedShips || (Object.values(ShipType) as ShipType[]);
 
     // Server: mines is a number (remaining). Local: placedMines is array (placed).
@@ -123,18 +132,16 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
     // The parent Grid might need to handle combat UI differently, but for now let's just hide this blocking overlay.
     if (gameState?.status === "Combat") return null;
 
-    if (!myPlayer) return null;
-
     // Check if we have placed 3 ships (Carrier size check is a hack from previous code, relying on count is safer)
     const allShipsPlaced = displayShips.length >= 3;
 
     // Check mines
-    const placedMinesCount = myPlayer.placedMines.length;
+    const placedMinesCount = myPlayer ? myPlayer.placedMines.length : localMines.length;
 
     // We need 3 ships and 2 mines
     const readyToDeploy = allShipsPlaced && placedMinesCount === 2;
 
-    if (myPlayer.isReady) {
+    if (myPlayer?.isReady) {
       return <div className={clsx(styles.stateMessage)}>Esperando al oponente... 📡</div>;
     }
 

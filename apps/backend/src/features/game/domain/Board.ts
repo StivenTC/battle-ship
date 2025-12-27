@@ -104,11 +104,50 @@ export class Board {
     return coords;
   }
 
+  removeShipByType(type: ShipType): void {
+    let shipIdToRemove: string | undefined;
+
+    // Find ship ID by type
+    for (const [id, ship] of this.ships) {
+      if (ship.type === type) {
+        shipIdToRemove = id;
+        break;
+      }
+    }
+
+    if (!shipIdToRemove) return;
+
+    // Clear cells
+    for (let y = 0; y < GRID_SIZE; y++) {
+      for (let x = 0; x < GRID_SIZE; x++) {
+        if (this.grid[y][x].shipId === shipIdToRemove) {
+          this.grid[y][x].state = "EMPTY";
+          this.grid[y][x].shipId = undefined;
+        }
+      }
+    }
+
+    // Remove from map
+    this.ships.delete(shipIdToRemove);
+  }
+
   private isValidPlacement(coords: Coordinates[]): boolean {
     for (const { x, y } of coords) {
       if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return false;
       if (this.grid[y][x].state !== "EMPTY") return false;
     }
     return true;
+  }
+
+  getMisses(): Coordinates[] {
+    const misses: Coordinates[] = [];
+    for (let y = 0; y < GRID_SIZE; y++) {
+      for (let x = 0; x < GRID_SIZE; x++) {
+        if (this.grid[y][x].state === "MISS") {
+          misses.push({ x, y });
+        }
+      }
+    }
+    return misses;
   }
 }

@@ -37,6 +37,7 @@ export interface Player {
   ships: Ship[];
   remainingMines: number;
   placedMines: Coordinates[];
+  misses: Coordinates[];
   ap: number;
   isReady: boolean;
   isConnected: boolean;

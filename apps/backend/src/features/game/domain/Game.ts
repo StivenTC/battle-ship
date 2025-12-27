@@ -83,6 +83,7 @@ export class Game {
         ships: player.ships,
         remainingMines: player.mines,
         placedMines: player.placedMines,
+        misses: player.board.getMisses(),
         ap: player.ap,
         isReady: player.isReady,
         isConnected: true,
