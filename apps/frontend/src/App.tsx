@@ -1,12 +1,19 @@
+import { useState } from "react";
 import { LobbyScreen } from "./components/game/Lobby/LobbyScreen";
 import { Grid } from "./components/game/Grid/Grid";
 import { SocketProvider } from "./context/SocketContext";
+import { UserProvider, useUser } from "./context/UserContext";
+import { SplashScreen } from "./components/startup/SplashScreen/SplashScreen";
+import { IdentityModal } from "./components/startup/IdentityModal/IdentityModal";
 import { useGame } from "./hooks/useGame";
 import styles from "./App.module.scss";
 import "./index.scss";
 
 const GameContainer = () => {
   const { gameState, error, loading, actions } = useGame();
+  const { playerName } = useUser();
+
+  if (!playerName) return null; // Wait for identity
 
   return (
     <div className={styles.appWrapper}>
@@ -23,8 +30,11 @@ const GameContainer = () => {
         <>
           <div className={styles.gameInfo}>
             Partida ID: <strong>{gameState.id}</strong>
-            {/* Temp Status display */}
-            <span style={{ marginLeft: 10 }}>Estado: {gameState.status}</span>
+            <span style={{ marginLeft: 10 }}>
+              {" "}
+              | Capitan: <strong>{playerName}</strong>
+            </span>
+            <span style={{ marginLeft: 10 }}> | Estado: {gameState.status}</span>
           </div>
           <Grid />
         </>
@@ -34,10 +44,21 @@ const GameContainer = () => {
 };
 
 function App() {
+  const [splashFinished, setSplashFinished] = useState(false);
+
   return (
-    <SocketProvider>
-      <GameContainer />
-    </SocketProvider>
+    <UserProvider>
+      <SocketProvider>
+        {!splashFinished ? (
+          <SplashScreen onFinish={() => setSplashFinished(true)} />
+        ) : (
+          <>
+            <IdentityModal />
+            <GameContainer />
+          </>
+        )}
+      </SocketProvider>
+    </UserProvider>
   );
 }
 
