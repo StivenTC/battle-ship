@@ -16,7 +16,8 @@ import {
   WebSocketServer,
 } from "@nestjs/websockets";
 import type { Server, Socket } from "socket.io";
-import type { GameManagerService } from "./game-manager.service.js";
+// biome-ignore lint/style/useImportType: dependency injection requires value import
+import { GameManagerService } from "./game-manager.service.js";
 
 @WebSocketGateway({ cors: true })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -36,6 +37,26 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket) {
     console.log("Client disconnected:", client.id);
     this.clients.delete(client.id);
+  }
+
+  @SubscribeMessage(GameEvents.CREATE_GAME)
+  handleCreateGame(@ConnectedSocket() client: Socket) {
+    try {
+      const playerId = client.id;
+      this.clients.set(client.id, { playerId });
+
+      const game = this.gameManager.createGame(playerId);
+      game.addPlayer(playerId);
+
+      client.join(game.id);
+
+      const clientData = this.clients.get(client.id);
+      if (clientData) clientData.gameId = game.id;
+
+      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+    } catch (error) {
+      client.emit(GameEvents.ERROR, { message: (error as Error).message });
+    }
   }
 
   @SubscribeMessage(GameEvents.JOIN_GAME)

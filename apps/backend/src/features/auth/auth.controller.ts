@@ -1,7 +1,8 @@
 import type { AuthResponseDto, LoginDto, RegisterDto } from "@battle-ship/shared";
 import { Body, Controller, Post, UnauthorizedException } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
-import type { UsersService } from "../users/users.service.js";
+// biome-ignore lint/style/useImportType: dependency injection requires value import
+import { UsersService } from "../users/users.service.js";
 
 @Controller("auth")
 export class AuthController {
