@@ -74,6 +74,8 @@ const GameContainer = () => {
   );
 };
 
+import { GameProvider } from "./context/GameContext";
+
 function App() {
   const [splashFinished, setSplashFinished] = useState(false);
 
@@ -83,10 +85,10 @@ function App() {
         {!splashFinished ? (
           <SplashScreen onFinish={() => setSplashFinished(true)} />
         ) : (
-          <>
+          <GameProvider>
             <IdentityModal />
             <GameContainer />
-          </>
+          </GameProvider>
         )}
       </SocketProvider>
     </UserProvider>
