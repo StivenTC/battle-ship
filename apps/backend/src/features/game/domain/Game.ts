@@ -50,8 +50,19 @@ export class Game {
 
   // Switch to combat when both ready
   checkReady() {
-    const allReady = Array.from(this.players.values()).every((p) => p.isReady);
+    const players = Array.from(this.players.values());
+    const allReady = players.every((p) => p.isReady);
+
+    console.log("Game.checkReady:", {
+      gameId: this.id,
+      status: this.status,
+      expectedStatus: GameStatus.Placement,
+      playerCount: players.length,
+      players: players.map((p) => ({ id: p.id, isReady: p.isReady })),
+    });
+
     if (allReady && this.status === GameStatus.Placement) {
+      console.log("Transitioning to Combat!");
       this.status = GameStatus.Combat;
       this.turnCount = 1;
     }

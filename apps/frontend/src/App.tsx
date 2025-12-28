@@ -37,8 +37,10 @@ const GameContainer = () => {
 
     switch (gameState.status) {
       case "Placement":
+        console.log("App: Rendering Placement Board");
         return <PlacementBoard onReady={actions.playerReady} />;
       case "Combat":
+        console.log("App: Rendering Combat View");
         return <CombatView />;
       case "Waiting":
         // Even if waiting, if we have a game ID, we generally show lobby or waiting room.

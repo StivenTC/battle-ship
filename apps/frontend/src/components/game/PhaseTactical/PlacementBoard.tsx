@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { type ShipType } from "@battle-ship/shared";
+import type { ShipType } from "@battle-ship/shared";
 import { Grid } from "../Grid/Grid";
 import { ShipSelection } from "../Shipyard/ShipSelection";
 import styles from "./PlacementBoard.module.scss";

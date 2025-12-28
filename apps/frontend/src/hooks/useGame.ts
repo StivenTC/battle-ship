@@ -6,6 +6,7 @@ import {
   type PlaceShipDto,
   type PlaceMineDto,
   type AttackDto,
+  SHIP_CONFIG,
 } from "@battle-ship/shared";
 import { useEffect, useState } from "react";
 import { useSocket } from "../context/SocketContext";
@@ -67,7 +68,7 @@ export const useGame = () => {
       type,
       start,
       horizontal,
-      size: 0,
+      size: SHIP_CONFIG[type].size, // Fix: Send real size
     };
     socket.emit(GameEvents.PLACE_SHIP, dto);
   };

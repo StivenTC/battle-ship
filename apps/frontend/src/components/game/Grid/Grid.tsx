@@ -48,7 +48,19 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
     });
   }
 
-  const displayShips = myPlayer ? myPlayer.ships : localShips;
+  // FIX: If server ships are empty (e.g. backend sync failure) but we have local ships, keep using local to avoid "Clearing" the board.
+  const serverShips = myPlayer?.ships || [];
+  const displayShips = serverShips.length > 0 ? serverShips : localShips;
+
+  // DEBUG: Check what we are rendering
+  if (myPlayer) {
+    console.log("Grid Render:", {
+      playerId,
+      serverShipsCount: serverShips.length,
+      displayShipsCount: displayShips.length,
+      ships: displayShips,
+    });
+  }
 
   // Helper to calculate pixel position based on grid index
   const getPosition = (index: number) => index * (CELL_SIZE + GAP_SIZE);
@@ -58,6 +70,8 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
   };
 
   const onCellClick = (x: number, y: number) => {
+    console.log(`Grid Click: ${x},${y} | Selection:`, selection.type, "| Player:", !!myPlayer);
+
     if (!selection.type) return;
 
     // Server Action
@@ -65,11 +79,23 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
       if (selection.type === "MINE") {
         actions.placeMine(x, y);
       } else {
-        actions.placeShip(selection.type, { x, y }, selection.isVertical);
+        // Fix: isVertical === true means horizontal === false
+        actions.placeShip(selection.type, { x, y }, !selection.isVertical);
       }
     } else {
       // Local fallback
       placeLocalShip(x, y);
+
+      // Attempt to sync to server if we have a socket but maybe myPlayer was missing?
+      // This helps recover if we were in "Phantom Local Mode"
+      if (gameState && !myPlayer) {
+        console.warn("Attempting to sync local placement to server (myPlayer missing)");
+        if (selection.type === "MINE") {
+          actions.placeMine(x, y);
+        } else {
+          actions.placeShip(selection.type, { x, y }, !selection.isVertical);
+        }
+      }
     }
   };
 
@@ -136,7 +162,9 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
     const allShipsPlaced = displayShips.length >= 3;
 
     // Check mines
-    const placedMinesCount = myPlayer ? myPlayer.placedMines.length : localMines.length;
+    // FIX: Fallback to local count if server state is cleared/empty
+    const serverMines = myPlayer?.placedMines || [];
+    const placedMinesCount = serverMines.length > 0 ? serverMines.length : localMines.length;
 
     // We need 3 ships and 2 mines
     const readyToDeploy = allShipsPlaced && placedMinesCount === 2;
@@ -183,7 +211,9 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
   };
 
   const renderMines = () => {
-    const mines = myPlayer ? myPlayer.placedMines : localMines;
+    // FIX: If server mines are empty (sync failure) but we have local mines, use local.
+    const serverMines = myPlayer?.placedMines || [];
+    const mines = serverMines.length > 0 ? serverMines : localMines;
     return mines.map((mine: Coordinates) => {
       if (!mine || typeof mine.x !== "number" || typeof mine.y !== "number") {
         console.warn("Invalid mine data:", mine);
