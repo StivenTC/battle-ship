@@ -7,7 +7,11 @@ import clsx from "clsx";
 
 // Reusing Grid styles for consistency, but we might want specific RADAR styles.
 
-export const RadarGrid = () => {
+type RadarGridProps = {
+  onAttackOverride?: (x: number, y: number) => void;
+};
+
+export const RadarGrid = ({ onAttackOverride }: RadarGridProps) => {
   const { gameState, playerId, actions } = useGame();
   const { playerName } = useUser();
 
@@ -40,6 +44,13 @@ export const RadarGrid = () => {
 
   const onCellClick = (x: number, y: number) => {
     if (gameState.turn !== playerId) return; // Not my turn
+
+    // Skill Override
+    if (onAttackOverride) {
+      onAttackOverride(x, y);
+      return;
+    }
+
     if (isHit(x, y) || isMiss(x, y)) return; // Already attacked
 
     actions.attack(x, y);

@@ -6,6 +6,7 @@ import {
   type PlaceShipDto,
   type PlaceMineDto,
   type AttackDto,
+  type SkillName,
   SHIP_CONFIG,
 } from "@battle-ship/shared";
 import { type ReactNode, createContext, useContext, useEffect, useState } from "react";
@@ -23,6 +24,7 @@ interface GameContextType {
     placeMine: (x: number, y: number) => void;
     playerReady: () => void;
     attack: (x: number, y: number) => void;
+    useSkill: (skillName: SkillName, target?: { x: number; y: number }) => void;
   };
 }
 
@@ -105,6 +107,11 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     socket.emit(GameEvents.ATTACK, dto);
   };
 
+  const useSkill = (skillName: SkillName, target?: { x: number; y: number }) => {
+    if (!socket || !userId) return;
+    socket.emit(GameEvents.USE_SKILL, { playerId: userId, skillName, target });
+  };
+
   const placeMine = (x: number, y: number) => {
     if (!socket || !gameState || !userId) return;
     const dto: PlaceMineDto = {
@@ -133,6 +140,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
           placeMine,
           playerReady,
           attack,
+          useSkill,
         },
       }}>
       {children}

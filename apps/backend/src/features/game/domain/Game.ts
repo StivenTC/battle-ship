@@ -1,4 +1,4 @@
-import { type GameState, GameStatus } from "@battle-ship/shared";
+import { type GameState, GameStatus, GRID_SIZE, SKILLS, type SkillName } from "@battle-ship/shared";
 import { Player } from "./Player.js";
 
 export class Game {
@@ -118,5 +118,70 @@ export class Game {
       turnCount: this.turnCount,
       winner: this.winner,
     };
+  }
+  useSkill(playerId: string, skillName: SkillName, target: { x: number; y: number }): boolean {
+    if (this.status !== GameStatus.Combat || this.turn !== playerId) return false;
+
+    const player = this.players.get(playerId);
+    const opponentId = Array.from(this.players.keys()).find((id) => id !== playerId);
+    const opponent = opponentId ? this.players.get(opponentId) : null;
+
+    if (!player || !opponent) return false;
+
+    const skillConfig = SKILLS[skillName];
+    if (!skillConfig) return false;
+
+    // Cost Validation
+    if (!player.spendAP(skillConfig.cost)) return false;
+
+    const { x, y } = target;
+
+    // Define simulation targets based on pattern
+    const hits: { x: number; y: number }[] = [];
+
+    if (skillConfig.pattern === "SCAN_3X3") {
+      // Logic: Pick 3 random cells in 3x3 area to "Reveal" (i.e., Attack)
+      const candidates: { x: number; y: number }[] = [];
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const tx = x + dx;
+          const ty = y + dy;
+          if (tx >= 0 && tx < GRID_SIZE && ty >= 0 && ty < GRID_SIZE) {
+            candidates.push({ x: tx, y: ty });
+          }
+        }
+      }
+
+      // Shuffle and take 3
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+      }
+      hits.push(...candidates.slice(0, 3));
+    } else if (skillConfig.pattern === "CROSS_5") {
+      // Logic: Cross Pattern (Center + 4 adjacent)
+      const offsets = [
+        { dx: 0, dy: 0 },
+        { dx: 0, dy: -1 },
+        { dx: 0, dy: 1 },
+        { dx: -1, dy: 0 },
+        { dx: 1, dy: 0 },
+      ];
+
+      for (const o of offsets) {
+        const tx = x + o.dx;
+        const ty = y + o.dy;
+        if (tx >= 0 && tx < GRID_SIZE && ty >= 0 && ty < GRID_SIZE) {
+          hits.push({ x: tx, y: ty });
+        }
+      }
+    }
+
+    // Execute Attacks
+    for (const h of hits) {
+      opponent.receiveAttack(h.x, h.y);
+    }
+
+    return true;
   }
 }

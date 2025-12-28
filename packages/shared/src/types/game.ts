@@ -67,8 +67,44 @@ export enum GameEvents {
   PLACE_MINE = "place_mine",
   PLAYER_READY = "player_ready",
   ATTACK = "attack",
+  USE_SKILL = "use_skill", // New
   GAME_STATE = "game_state",
   ERROR = "error",
+}
+
+// SKILLS CONFIGURATION
+
+export type SkillName = "SCAN" | "AIRSTRIKE";
+
+export interface SkillConfig {
+  id: SkillName;
+  displayName: string;
+  description: string;
+  cost: number;
+  pattern: "SCAN_3X3" | "CROSS_5";
+}
+
+export const SKILLS: Record<SkillName, SkillConfig> = {
+  SCAN: {
+    id: "SCAN",
+    displayName: "📡 SCAN",
+    description: "Revela un área de 3x3 (3 AP)",
+    cost: 3,
+    pattern: "SCAN_3X3",
+  },
+  AIRSTRIKE: {
+    id: "AIRSTRIKE",
+    displayName: "✈️ AIRSTRIKE",
+    description: "Ataque aéreo en línea (5 AP)",
+    cost: 5,
+    pattern: "CROSS_5",
+  },
+};
+
+export interface UseSkillDto {
+  playerId: string;
+  skillName: SkillName;
+  target?: { x: number; y: number };
 }
 
 export interface CreateGameDto {

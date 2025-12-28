@@ -5,6 +5,7 @@ import { RadarGrid } from "./RadarGrid";
 import { useGame } from "../../../hooks/useGame";
 import { useUser } from "../../../context/UserContext";
 import styles from "./CombatView.module.scss";
+import { SKILLS, type SkillName } from "@battle-ship/shared";
 
 // ... imports
 import { ResultOverlay } from "./ResultOverlay";
@@ -22,6 +23,9 @@ export const CombatView = () => {
 
   // Detect Turn Change & Hits
   const [prevTurn, setPrevTurn] = useState<string | null>(null);
+
+  // Skill Selection State
+  const [selectedSkill, setSelectedSkill] = useState<SkillName | null>(null);
 
   // Transition Logic & Feedback
   useEffect(() => {
@@ -81,6 +85,21 @@ export const CombatView = () => {
   const turnStatus = isMyTurn ? "TU TURNO - ATACAR" : `TURNO ENEMIGO - DEFENDER`;
   const actionStatus = isMyTurn ? "Selecciona una celda enemiga" : "Esperando impacto...";
 
+  // Wrap generic attack action to handle skills if selected
+  const handleGridClick = (x: number, y: number) => {
+    if (selectedSkill) {
+      actions.useSkill(selectedSkill, { x, y });
+      setSelectedSkill(null); // Reset after use
+      setFeedback(`${SKILLS[selectedSkill].displayName} ACTIVADO!`);
+      setTimeout(() => setFeedback(null), 1500);
+    } else {
+      // Normal attack
+      actions.attack(x, y);
+    }
+  };
+
+  const ap = myPlayer?.ap || 0;
+
   return (
     <div className={styles.container}>
       {/* HEADER */}
@@ -90,7 +109,11 @@ export const CombatView = () => {
             {turnStatus}
           </span>
         </div>
-        <div className={styles.statusLine}>{actionStatus}</div>
+        <div className={styles.statusLine}>
+          {selectedSkill
+            ? `SELECCIONA OBJETIVO PARA ${SKILLS[selectedSkill].displayName}`
+            : actionStatus}
+        </div>
         {feedback && <div className={styles.feedbackOverlay}>{feedback}</div>}
       </header>
 
@@ -118,7 +141,7 @@ export const CombatView = () => {
             </div>
           ) : (
             <div className={styles.enemyGrid}>
-              <RadarGrid />
+              <RadarGrid onAttackOverride={selectedSkill ? handleGridClick : undefined} />
             </div>
           )}
         </div>
@@ -132,31 +155,25 @@ export const CombatView = () => {
             {[0, 1, 2, 3, 4, 5].map((slot) => (
               <div
                 key={`ap-${slot}`} // Fixed key
-                className={clsx(styles.apPip, { [styles.filled]: slot < (myPlayer?.ap || 0) })}
+                className={clsx(styles.apPip, { [styles.filled]: slot < ap })}
               />
             ))}
           </div>
-          <span className={styles.apValue}>{myPlayer?.ap || 0}/6</span>
+          <span className={styles.apValue}>{ap}/6</span>
         </div>
 
         <div className={styles.skills}>
-          <button
-            type="button"
-            className={styles.skillBtn}
-            disabled
-            title="Revela un área de 3x3 (3 AP)">
-            📡 SCAN (3)
-          </button>
-          <button
-            type="button"
-            className={styles.skillBtn}
-            disabled
-            title="Ataque aéreo en línea (5 AP)">
-            ✈️ AIRSTRIKE (5)
-          </button>
-          <button type="button" className={styles.skillBtn} disabled title="Próximamente">
-            ☢️ NUKE
-          </button>
+          {Object.values(SKILLS).map((skill) => (
+            <button
+              key={skill.id}
+              type="button"
+              className={clsx(styles.skillBtn, { [styles.active]: selectedSkill === skill.id })}
+              disabled={ap < skill.cost}
+              onClick={() => setSelectedSkill(selectedSkill === skill.id ? null : skill.id)}
+              title={skill.description}>
+              {skill.displayName} ({skill.cost})
+            </button>
+          ))}
         </div>
       </footer>
     </div>

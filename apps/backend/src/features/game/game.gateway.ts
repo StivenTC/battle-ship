@@ -5,6 +5,7 @@ import {
   type JoinGameDto,
   type PlaceMineDto,
   type PlaceShipDto,
+  type SkillName,
 } from "@battle-ship/shared";
 import {
   ConnectedSocket,
@@ -199,6 +200,50 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+    }
+  }
+  @SubscribeMessage(GameEvents.USE_SKILL)
+  async handleUseSkill(
+    @MessageBody() dto: {
+      playerId: string;
+      skillName: SkillName;
+      target?: { x: number; y: number };
+    },
+    @ConnectedSocket() client: Socket
+  ) {
+    const clientData = this.clients.get(client.id);
+    if (!clientData?.gameId) return;
+
+    const game = this.gameManager.getGame(clientData.gameId);
+    if (!game) return;
+
+    // Validate Status
+    if (game.status !== GameStatus.Combat) {
+      return client.emit(GameEvents.ERROR, { message: "Not in combat phase" });
+    }
+
+    // Validate Turn
+    if (game.turn !== dto.playerId) {
+      return client.emit(GameEvents.ERROR, { message: "Not your turn" });
+    }
+
+    const target = dto.target || { x: 0, y: 0 }; // Should be provided
+    const success = game.useSkill(dto.playerId, dto.skillName, target);
+
+    if (success) {
+      // Check Win Condition
+      const opponentId = Array.from(game.players.keys()).find((id) => id !== dto.playerId);
+      const opponent = opponentId ? game.players.get(opponentId) : null;
+
+      if (opponent && opponent.hasLost()) {
+        await this.gameManager.handleGameOver(game, dto.playerId);
+      } else {
+        game.switchTurn();
+      }
+
+      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+    } else {
+      client.emit(GameEvents.ERROR, { message: "Skill usage failed (Not enough AP?)" });
     }
   }
 }
