@@ -3,13 +3,14 @@ import styles from "./ResultOverlay.module.scss";
 
 interface ResultOverlayProps {
   winnerId: string | undefined;
-  myPlayerId: string;
+  winnerName: string;
+  isVictory: boolean;
   onExit: () => void;
+  // Deprecated logs, but keeping interface clean
+  myPlayerId?: string;
 }
 
-export const ResultOverlay = ({ winnerId, myPlayerId, onExit }: ResultOverlayProps) => {
-  const isVictory = winnerId === myPlayerId;
-
+export const ResultOverlay = ({ winnerId, winnerName, isVictory, onExit }: ResultOverlayProps) => {
   return (
     <div className={styles.overlay}>
       <div
@@ -18,7 +19,7 @@ export const ResultOverlay = ({ winnerId, myPlayerId, onExit }: ResultOverlayPro
         <p className={styles.subtitle}>
           {isVictory
             ? "¡Has dominado los mares! La flota enemiga ha sido erradicada."
-            : "Tu flota ha caído. Retirada estratégica inminente."}
+            : `El ganador es: ${winnerName}. Tu flota ha caído.`}
         </p>
 
         <div className={styles.actions}>

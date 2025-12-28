@@ -41,12 +41,11 @@ const GameContainer = () => {
         console.log("App: Rendering Placement Board");
         return <PlacementBoard onReady={actions.playerReady} />;
       case "Combat":
-        console.log("App: Rendering Combat View");
+      case "Finished": // Let CombatView handle the result overlay
+        console.log("App: Rendering Combat View (Combat/Finished)");
         return <CombatView />;
       case "Waiting":
         return <WaitingRoom gameId={gameState.id} />;
-      case "Finished":
-        return <div>JUEGO TERMINADO - Ganador: {gameState.winner}</div>;
       default:
         return <div>Estado desconocido: {gameState.status}</div>;
     }

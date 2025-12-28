@@ -62,6 +62,16 @@ export class Game {
 
     if (allReady && this.status === GameStatus.Placement) {
       console.log("Transitioning to Combat!");
+
+      // TRIGGER MINE TRAPS
+      // For each player, check if their ships are on top of opponent's mines
+      const p1 = players[0];
+      const p2 = players[1];
+
+      console.log("Checking Mine Traps...");
+      p1.checkMines(p2.placedMines);
+      p2.checkMines(p1.placedMines);
+
       this.status = GameStatus.Combat;
       this.turnCount = 1;
     }

@@ -145,6 +145,9 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
   };
 
   const renderControls = () => {
+    // If in Combat, hide controls entirely
+    if (gameState?.status === "Combat") return null;
+
     // If allowedShips is provided, ONLY show those. Otherwise show all.
     const shipsToShow = allowedShips || (Object.values(ShipType) as ShipType[]);
 
@@ -280,14 +283,38 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
 
   const renderCells = () => {
     const cells: JSX.Element[] = [];
+
+    // Derived States for Rendering optimization
+    const hits = new Set<string>();
+    const misses = new Set<string>();
+
+    if (myPlayer) {
+      // Populate Hits from Ships
+      myPlayer.ships.forEach((ship) => {
+        ship.hits.forEach((h) => hits.add(`${h.x},${h.y}`));
+      });
+      // Populate Misses from GameState (exposed by backend)
+      // Note: Frontend types might need 'misses' on Player interface.
+      // Assuming it's there as per backend Game.ts updates.
+      if (myPlayer.misses) {
+        myPlayer.misses.forEach((m: Coordinates) => misses.add(`${m.x},${m.y}`));
+      }
+    }
+
     for (let y = 0; y < GRID_SIZE; y++) {
       for (let x = 0; x < GRID_SIZE; x++) {
+        const key = `${x},${y}`;
+        let cellState: "EMPTY" | "HIT" | "MISS" = "EMPTY";
+
+        if (hits.has(key)) cellState = "HIT";
+        else if (misses.has(key)) cellState = "MISS";
+
         cells.push(
           <Cell
-            key={`${x}-${y}`}
+            key={key}
             x={x}
             y={y}
-            state={"EMPTY"}
+            state={cellState}
             onClick={(gx, gy) => onCellClick(gx, gy)}
             onMouseEnter={() => handleCellHover(x, y)}
           />

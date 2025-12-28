@@ -59,8 +59,8 @@ export class Board {
       return false;
     }
 
-    // Check if there is already a mine
-    if (this.grid[y][x].hasMine) {
+    // Check overlap: No mine already, and NO SHIP
+    if (this.grid[y][x].hasMine || this.grid[y][x].state !== "EMPTY") {
       return false;
     }
 
@@ -68,15 +68,39 @@ export class Board {
     return true;
   }
 
-  receiveAttack(x: number, y: number): { result: "HIT" | "MISS" | "SUNK"; shipId?: string } {
-    if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) {
-      return { result: "MISS" }; // Out of bounds treated as miss
+  triggerMine(x: number, y: number): { result: "HIT" | "MISS" | "SUNK"; shipId?: string }[] {
+    const affected: { result: "HIT" | "MISS" | "SUNK"; shipId?: string }[] = [];
+
+    // Cross pattern: Center, Up, Down, Left, Right
+    const targets = [
+      { x, y },
+      { x: x, y: y - 1 },
+      { x: x, y: y + 1 },
+      { x: x - 1, y: y },
+      { x: x + 1, y: y },
+    ];
+
+    console.log(`Mine Triggered at ${x},${y}. Exploding targets:`, targets);
+
+    for (const t of targets) {
+      // Bounds check for explosion
+      if (t.x >= 0 && t.x < GRID_SIZE && t.y >= 0 && t.y < GRID_SIZE) {
+        // Recursive attack, but bypass mine check to avoid infinite loops if mines are adjacent
+        // Actually, mines normally chain-react. For simplicity here, just damage the cell.
+        const res = this.damageCell(t.x, t.y);
+        affected.push(res);
+      }
     }
 
+    return affected;
+  }
+
+  // Internal helper for direct damage without mine triggering
+  private damageCell(x: number, y: number): { result: "HIT" | "MISS" | "SUNK"; shipId?: string } {
     const cell = this.grid[y][x];
 
     if (cell.state === "HIT" || cell.state === "MISS") {
-      return { result: cell.state }; // Already attacked
+      return { result: cell.state };
     }
 
     if (cell.state === "SHIP" && cell.shipId) {
@@ -91,6 +115,34 @@ export class Board {
 
     cell.state = "MISS";
     return { result: "MISS" };
+  }
+
+  receiveAttack(
+    x: number,
+    y: number
+  ): { result: "HIT" | "MISS" | "SUNK"; shipId?: string; mineExploded?: boolean } {
+    if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) {
+      return { result: "MISS" };
+    }
+
+    const cell = this.grid[y][x];
+
+    // 1. Check Mine
+    if (cell.hasMine) {
+      console.log(`Mine found at ${x},${y}! BOOM!`);
+      cell.hasMine = false; // Consume mine
+      // Trigger Explosion
+      const explosionResults = this.triggerMine(x, y);
+
+      // Determine primary result based on center cell
+      // If center was a ship, it's a HIT/SUNK. Else it's a MISS (but with explosion side effects)
+      // The frontend needs to know it was a mine to show animation.
+      const centerRes = explosionResults[0];
+      return { ...centerRes, mineExploded: true };
+    }
+
+    // 2. Normal Attack
+    return this.damageCell(x, y);
   }
 
   private getShipCoordinates(start: Coordinates, size: number, horizontal: boolean): Coordinates[] {
@@ -134,7 +186,8 @@ export class Board {
   private isValidPlacement(coords: Coordinates[]): boolean {
     for (const { x, y } of coords) {
       if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return false;
-      if (this.grid[y][x].state !== "EMPTY") return false;
+      // Cannot place on non-empty cell OR existing mine
+      if (this.grid[y][x].state !== "EMPTY" || this.grid[y][x].hasMine) return false;
     }
     return true;
   }
@@ -149,5 +202,16 @@ export class Board {
       }
     }
     return misses;
+  }
+
+  getShipState(id: string): { hits: number; isSunk: boolean } | undefined {
+    const ship = this.ships.get(id);
+    if (!ship) return undefined;
+    return { hits: ship.hits, isSunk: ship.hits >= ship.size };
+  }
+
+  getCellState(x: number, y: number): CellState {
+    if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return "MISS";
+    return this.grid[y][x].state;
   }
 }
