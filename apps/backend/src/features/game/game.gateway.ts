@@ -18,7 +18,7 @@ import {
 import type { Server, Socket } from "socket.io";
 // biome-ignore lint/style/useImportType: dependency injection requires value import
 import { GameManagerService } from "./game-manager.service.js";
-import { Game } from "./domain/Game.js";
+import type { Game } from "./domain/Game.js";
 
 @WebSocketGateway({ cors: true })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -159,7 +159,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const player = game.players.get(dto.playerId);
     if (!player) return;
 
+    console.log(`Player ${dto.playerId} setting ready...`);
     player.setReady();
+    console.log(`Player ${dto.playerId} is now ready: ${player.isReady}`);
     game.checkReady();
 
     this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());

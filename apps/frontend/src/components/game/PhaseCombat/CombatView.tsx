@@ -6,6 +6,9 @@ import { useGame } from "../../../hooks/useGame";
 import { useUser } from "../../../context/UserContext";
 import styles from "./CombatView.module.scss";
 
+// ... imports
+import { ResultOverlay } from "./ResultOverlay";
+
 export const CombatView = () => {
   const { gameState, playerId, actions } = useGame();
   const { playerName } = useUser();
@@ -14,17 +17,29 @@ export const CombatView = () => {
   const [activeView, setActiveView] = useState<"FRIENDLY" | "ENEMY">("ENEMY");
 
   // Auto-switch based on turn
+  const currentTurn = gameState?.turn;
   useEffect(() => {
-    if (!gameState || !playerId) return;
+    if (!currentTurn || !playerId) return;
 
-    if (gameState.turn === playerId) {
+    if (currentTurn === playerId) {
       setActiveView("ENEMY");
     } else {
       setActiveView("FRIENDLY");
     }
-  }, [gameState?.turn, playerId]);
+  }, [currentTurn, playerId]);
 
   if (!gameState || !playerId) return null;
+
+  // HANDLE GAME OVER
+  if (gameState.winner) {
+    return (
+      <ResultOverlay
+        winnerId={gameState.winner}
+        myPlayerId={playerId}
+        onExit={() => window.location.reload()} // Simple return to lobby
+      />
+    );
+  }
 
   const isMyTurn = gameState.turn === playerId;
   const myPlayer = gameState.players[playerId];
@@ -44,7 +59,7 @@ export const CombatView = () => {
         <div className={styles.statusLine}>{actionStatus}</div>
       </header>
 
-      {/* CAROUSEL / GRID AREA */}
+      {/* ... rest of component ... */}
       <div className={styles.carouselArea}>
         <div className={styles.viewToggle}>
           <button
@@ -80,10 +95,10 @@ export const CombatView = () => {
         <div className={styles.apDisplay}>
           <span className={styles.apLabel}>ENERGÍA (AP)</span>
           <div className={styles.apBar}>
-            {Array.from({ length: 6 }).map((_, i) => (
+            {[0, 1, 2, 3, 4, 5].map((slot) => (
               <div
-                key={`ap-${i}`}
-                className={clsx(styles.apPip, { [styles.filled]: i < (myPlayer?.ap || 0) })}
+                key={slot}
+                className={clsx(styles.apPip, { [styles.filled]: slot < (myPlayer?.ap || 0) })}
               />
             ))}
           </div>

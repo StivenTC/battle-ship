@@ -53,12 +53,11 @@ export class Game {
     const players = Array.from(this.players.values());
     const allReady = players.every((p) => p.isReady);
 
-    console.log("Game.checkReady:", {
-      gameId: this.id,
+    console.log(`Game ${this.id} checkReady:`, {
       status: this.status,
-      expectedStatus: GameStatus.Placement,
       playerCount: players.length,
       players: players.map((p) => ({ id: p.id, isReady: p.isReady })),
+      allReady,
     });
 
     if (allReady && this.status === GameStatus.Placement) {

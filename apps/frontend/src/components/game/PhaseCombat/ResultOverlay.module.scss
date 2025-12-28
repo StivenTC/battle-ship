@@ -1,0 +1,82 @@
+@use "../../../styles/tokens/mixins" as *;
+
+.overlay {
+  @include absolute-fill;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  @include flex-center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.card {
+  @include glass-panel;
+  background: rgba(16, 23, 42, 0.9);
+  padding: var(--space-8) var(--space-6);
+  border-radius: 16px;
+  text-align: center;
+  max-width: 90%;
+  width: 320px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+
+  &.victory {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 40px rgba(203, 213, 225, 0.2); // Soft Silver
+    
+    .title {
+      color: var(--color-primary);
+      text-shadow: 0 0 10px rgba(203, 213, 225, 0.5);
+    }
+  }
+
+  &.defeat {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.2); // Red
+
+    .title {
+      color: var(--color-danger);
+      text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+    }
+  }
+}
+
+.title {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-4);
+}
+
+.subtitle {
+  color: #8892b0; // Text Muted
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: var(--space-8);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}
+
+.exitBtn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: bold;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

@@ -33,8 +33,11 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
     handleCellLeave,
     placeShip: placeLocalShip, // Renamed to avoid config
     selectShipType,
+    resetSelection,
     toggleOrientation,
     isValidPlacement,
+    removeShip,
+    removeMine,
   } = useBoard();
 
   // DERIVE SHIPS: Use Server state if available, otherwise local (for now/fallback)
@@ -72,7 +75,47 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
   const onCellClick = (x: number, y: number) => {
     console.log(`Grid Click: ${x},${y} | Selection:`, selection.type, "| Player:", !!myPlayer);
 
-    if (!selection.type) return;
+    // Handle removal if !selection.type (tap to remove - LOCAL ONLY)
+    if (!selection.type) {
+      if (!gameState || !myPlayer) {
+        // Local mode removal
+        const localShip = localShips.find((s) => s.position.some((p) => p.x === x && p.y === y));
+        if (localShip) {
+          removeShip(localShip.id);
+          return;
+        }
+        const localMine = localMines.find((m) => m.x === x && m.y === y);
+        if (localMine) {
+          removeMine(x, y);
+          return;
+        }
+      }
+      return;
+    }
+
+    // --- VALIDATION BEFORE ACTION ---
+    const serverMines = myPlayer?.placedMines || [];
+    const currentMinesCount = serverMines.length > 0 ? serverMines.length : localMines.length;
+    const currentShipsCount = displayShips.length;
+
+    // 1. Mine Limit
+    if (selection.type === "MINE") {
+      if (currentMinesCount >= 2) {
+        console.warn("Max Warning: Cannot place more than 2 mines.");
+        resetSelection();
+        return;
+      }
+    } else {
+      // 2. Ship Limit
+      // If we have 3 ships, we can only MOVE an existing one.
+      // If the selected type is NOT in the placed ships, it's a NEW ship.
+      const isExisting = displayShips.some((s) => s.type === selection.type);
+      if (currentShipsCount >= 3 && !isExisting) {
+        console.warn("Max Warning: Cannot place more than 3 ships.");
+        resetSelection();
+        return;
+      }
+    }
 
     // Server Action
     if (gameState && myPlayer) {
@@ -82,6 +125,7 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
         // Fix: isVertical === true means horizontal === false
         actions.placeShip(selection.type, { x, y }, !selection.isVertical);
       }
+      resetSelection(); // Auto-deselect after online action
     } else {
       // Local fallback
       placeLocalShip(x, y);
@@ -95,6 +139,7 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
         } else {
           actions.placeShip(selection.type, { x, y }, !selection.isVertical);
         }
+        resetSelection();
       }
     }
   };

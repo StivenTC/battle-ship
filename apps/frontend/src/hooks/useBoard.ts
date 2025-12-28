@@ -69,12 +69,18 @@ export const useBoard = () => {
     return true;
   };
 
+  const MAX_SHIPS = 3;
+  const MAX_MINES = 2;
+
   const placeShip = (x: number, y: number) => {
     if (!selection.type) return;
 
     if (selection.type === "MINE") {
       if (isValidPlacement({ x, y }, 1, false)) {
-        setPlacedMines((prev) => [...prev, { x, y }]);
+        setPlacedMines((prev) => {
+          if (prev.length >= MAX_MINES) return prev; // Max reached
+          return [...prev, { x, y }];
+        });
         setSelection((prev) => ({ ...prev, type: null }));
       }
       return;
@@ -103,11 +109,29 @@ export const useBoard = () => {
     }
 
     setShips((prev) => {
+      // Check if we are moving an existing ship
+      const isMoving = prev.some((s) => s.type === selection.type);
+
+      // If NOT moving (adding new) and max reached, block
+      if (!isMoving && prev.length >= MAX_SHIPS) {
+        return prev;
+      }
+
       // Remove existing ship of same type to enforce 1 per type
       const filtered = prev.filter((s) => s.type !== selection.type);
       return [...filtered, newShip];
     });
+
+    // Auto-deselect after placement for better UX
     setSelection({ type: null, isVertical: selection.isVertical });
+  };
+
+  const removeShip = (shipId: string) => {
+    setShips((prev) => prev.filter((s) => s.id !== shipId));
+  };
+
+  const removeMine = (x: number, y: number) => {
+    setPlacedMines((prev) => prev.filter((m) => m.x !== x || m.y !== y));
   };
 
   const handleCellHover = (x: number, y: number) => {
@@ -118,14 +142,21 @@ export const useBoard = () => {
     setHoverCell(null);
   };
 
+  const resetSelection = () => {
+    setSelection((prev) => ({ ...prev, type: null }));
+  };
+
   return {
     ships,
     placedMines,
     selection,
     hoverCell,
     selectShipType,
+    resetSelection,
     toggleOrientation,
     placeShip,
+    removeShip,
+    removeMine,
     handleCellHover,
     handleCellLeave,
     isValidPlacement,

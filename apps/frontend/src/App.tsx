@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LobbyScreen } from "./components/game/Lobby/LobbyScreen";
+import { WaitingRoom } from "./components/game/Lobby/WaitingRoom";
 import { Grid } from "./components/game/Grid/Grid";
 import { SocketProvider } from "./context/SocketContext";
 import { UserProvider, useUser } from "./context/UserContext";
@@ -43,15 +44,7 @@ const GameContainer = () => {
         console.log("App: Rendering Combat View");
         return <CombatView />;
       case "Waiting":
-        // Even if waiting, if we have a game ID, we generally show lobby or waiting room.
-        // But here, if we just created/joined, status might be Waiting until 2nd player joins.
-        return (
-          <div className={styles.waitingRoom}>
-            <h2>Sala de Espera: {gameState.id}</h2>
-            <p>Esperando al oponente... 📡</p>
-            <div className="spinner" />
-          </div>
-        );
+        return <WaitingRoom gameId={gameState.id} />;
       case "Finished":
         return <div>JUEGO TERMINADO - Ganador: {gameState.winner}</div>;
       default:
