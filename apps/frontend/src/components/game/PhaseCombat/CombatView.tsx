@@ -6,8 +6,6 @@ import { useGame } from "../../../hooks/useGame";
 import { useUser } from "../../../context/UserContext";
 import styles from "./CombatView.module.scss";
 import { SKILLS, type SkillName } from "@battle-ship/shared";
-
-// ... imports
 import { ResultOverlay } from "./ResultOverlay";
 
 export const CombatView = () => {
@@ -19,13 +17,13 @@ export const CombatView = () => {
 
   // Feedback Log State
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [lastTurnCount, setLastTurnCount] = useState<number>(0);
 
   // Detect Turn Change & Hits
   const [prevTurn, setPrevTurn] = useState<string | null>(null);
 
   // Skill Selection State
   const [selectedSkill, setSelectedSkill] = useState<SkillName | null>(null);
+  const [previewCenter, setPreviewCenter] = useState<{ x: number; y: number } | null>(null);
 
   // Transition Logic & Feedback
   useEffect(() => {
@@ -33,34 +31,37 @@ export const CombatView = () => {
 
     // Detect Turn Change
     if (gameState.turn !== prevTurn) {
-      // Case 1: My Attack Just Finished (Turn went Me -> Enemy)
       if (prevTurn === playerId && gameState.turn !== playerId) {
-        // I just attacked. I want to see the result on Enemy Grid (where I attacked).
-        // So update feedback but DO NOT switch view yet.
         setFeedback("Resultados del Ataque...");
         setTimeout(() => {
           setActiveView("FRIENDLY");
           setFeedback("Turno de Defensa");
           setTimeout(() => setFeedback(null), 1000);
-        }, 2500); // 2.5s delay to see explosion
-      }
-
-      // Case 2: Enemy Attack Just Finished (Turn went Enemy -> Me)
-      else if (prevTurn && prevTurn !== playerId && gameState.turn === playerId) {
-        // Enemy just attacked ME. I am watching My Grid (Friendly).
+        }, 2500);
+      } else if (prevTurn && prevTurn !== playerId && gameState.turn === playerId) {
         setFeedback("¡TURNO ENEMIGO FINALIZADO!");
-        // I want to see where they hit me on my grid.
-        // Then switch to attack mode.
         setTimeout(() => {
           setActiveView("ENEMY");
           setFeedback("¡TU TURNO!");
           setTimeout(() => setFeedback(null), 1000);
         }, 2500);
       }
-
       setPrevTurn(gameState.turn);
     }
-  }, [gameState?.turn, playerId, prevTurn]);
+  }, [gameState, playerId, prevTurn]);
+
+  // Handle Ghost Preview on Mouse Move
+  const handleGridHover = (x: number, y: number) => {
+    if (selectedSkill) {
+      setPreviewCenter({ x, y });
+    } else {
+      setPreviewCenter(null);
+    }
+  };
+
+  const handleGridLeave = () => {
+    setPreviewCenter(null);
+  };
 
   if (!gameState || !playerId) return null;
 
@@ -71,8 +72,8 @@ export const CombatView = () => {
 
     return (
       <ResultOverlay
-        winnerId={gameState.winner} // Keep for debug/check
-        winnerName={winnerName} // Pass friendly name
+        winnerId={gameState.winner}
+        winnerName={winnerName}
         isVictory={isWinner}
         onExit={() => window.location.reload()}
       />
@@ -82,7 +83,7 @@ export const CombatView = () => {
   const isMyTurn = gameState.turn === playerId;
   const myPlayer = gameState.players[playerId];
 
-  const turnStatus = isMyTurn ? "TU TURNO - ATACAR" : `TURNO ENEMIGO - DEFENDER`;
+  const turnStatus = isMyTurn ? "TU TURNO - ATACAR" : "TURNO ENEMIGO - DEFENDER";
   const actionStatus = isMyTurn ? "Selecciona una celda enemiga" : "Esperando impacto...";
 
   // Wrap generic attack action to handle skills if selected
@@ -90,10 +91,10 @@ export const CombatView = () => {
     if (selectedSkill) {
       actions.useSkill(selectedSkill, { x, y });
       setSelectedSkill(null); // Reset after use
+      setPreviewCenter(null);
       setFeedback(`${SKILLS[selectedSkill].displayName} ACTIVADO!`);
       setTimeout(() => setFeedback(null), 1500);
     } else {
-      // Normal attack
       actions.attack(x, y);
     }
   };
@@ -140,8 +141,17 @@ export const CombatView = () => {
               <Grid />
             </div>
           ) : (
-            <div className={styles.enemyGrid}>
-              <RadarGrid onAttackOverride={selectedSkill ? handleGridClick : undefined} />
+            <div className={styles.enemyGrid} onMouseLeave={handleGridLeave}>
+              <RadarGrid
+                onAttackOverride={
+                  selectedSkill && SKILLS[selectedSkill].pattern !== "GLOBAL_RANDOM_3"
+                    ? handleGridClick
+                    : undefined
+                }
+                previewCenter={previewCenter}
+                skillPattern={selectedSkill ? SKILLS[selectedSkill].pattern : undefined}
+                onCellHover={handleGridHover}
+              />
             </div>
           )}
         </div>
@@ -154,7 +164,7 @@ export const CombatView = () => {
           <div className={styles.apBar}>
             {[0, 1, 2, 3, 4, 5].map((slot) => (
               <div
-                key={`ap-${slot}`} // Fixed key
+                key={`ap-${slot}`}
                 className={clsx(styles.apPip, { [styles.filled]: slot < ap })}
               />
             ))}
@@ -163,17 +173,35 @@ export const CombatView = () => {
         </div>
 
         <div className={styles.skills}>
-          {Object.values(SKILLS).map((skill) => (
-            <button
-              key={skill.id}
-              type="button"
-              className={clsx(styles.skillBtn, { [styles.active]: selectedSkill === skill.id })}
-              disabled={ap < skill.cost}
-              onClick={() => setSelectedSkill(selectedSkill === skill.id ? null : skill.id)}
-              title={skill.description}>
-              {skill.displayName} ({skill.cost})
-            </button>
-          ))}
+          {Object.values(SKILLS)
+            .filter((skill) => {
+              // Show only if we have the linked ship and it's not sunk
+              const ship = myPlayer.ships.find((s) => s.type === skill.linkedShip);
+              return ship && !ship.isSunk;
+            })
+            .map((skill) => (
+              <button
+                key={skill.id}
+                type="button"
+                className={clsx(styles.skillBtn, { [styles.active]: selectedSkill === skill.id })}
+                disabled={ap < skill.cost}
+                onClick={() => {
+                  if (skill.pattern === "GLOBAL_RANDOM_3") {
+                    // Immediate execution for Chaotic Salvo
+                    if (ap >= skill.cost) {
+                      actions.useSkill(skill.id, { x: 0, y: 0 }); // Dummy coords
+                      setFeedback(`${skill.displayName} LANZADA!`);
+                      setTimeout(() => setFeedback(null), 1500);
+                      setSelectedSkill(null);
+                    }
+                  } else {
+                    setSelectedSkill(selectedSkill === skill.id ? null : skill.id);
+                  }
+                }}
+                title={skill.description}>
+                {skill.displayName} ({skill.cost})
+              </button>
+            ))}
         </div>
       </footer>
     </div>

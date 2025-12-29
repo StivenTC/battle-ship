@@ -15,6 +15,7 @@ export class Player {
   public mines: number;
   public isReady: boolean;
   public placedMines: Coordinates[];
+  public revealedCells: Coordinates[];
 
   constructor(id: string) {
     this.id = id;
@@ -23,6 +24,7 @@ export class Player {
     this.ap = 1;
     this.mines = MINES_PER_PLAYER;
     this.placedMines = [];
+    this.revealedCells = [];
     this.isReady = false;
   }
 
@@ -184,6 +186,12 @@ export class Player {
     }
 
     return outcome;
+  }
+
+  reveal(x: number, y: number) {
+    if (!this.revealedCells.some((c) => c.x === x && c.y === y)) {
+      this.revealedCells.push({ x, y });
+    }
   }
 
   // New helper to sync because of Mine side-effects

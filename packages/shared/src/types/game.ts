@@ -14,7 +14,14 @@ export const SHIP_NAMES_ES: Record<ShipType, string> = {
   [ShipType.Corvette]: "Corbeta",
 };
 
-export type CellState = "EMPTY" | "SHIP" | "HIT" | "MISS";
+export type CellState =
+  | "EMPTY"
+  | "SHIP"
+  | "HIT"
+  | "MISS"
+  | "REVEALED"
+  | "REVEALED_SHIP"
+  | "REVEALED_EMPTY";
 
 export interface Coordinates {
   x: number;
@@ -38,6 +45,7 @@ export interface Player {
   remainingMines: number;
   placedMines: Coordinates[];
   misses: Coordinates[];
+  revealedCells: Coordinates[];
   ap: number;
   isReady: boolean;
   isConnected: boolean;
@@ -72,32 +80,62 @@ export enum GameEvents {
   ERROR = "error",
 }
 
-// SKILLS CONFIGURATION
-
-export type SkillName = "SCAN" | "AIRSTRIKE";
+export type SkillName =
+  | "DRONE_RECON"
+  | "X_IMPACT"
+  | "CHAOTIC_SALVO"
+  | "SONAR_TORPEDO"
+  | "REVEALING_SHOT";
 
 export interface SkillConfig {
   id: SkillName;
   displayName: string;
   description: string;
   cost: number;
-  pattern: "SCAN_3X3" | "CROSS_5";
+  pattern: "SCAN_3X3" | "CROSS_DIAGONAL" | "GLOBAL_RANDOM_3" | "LINE_RAY" | "SINGLE_REVEAL";
+  linkedShip: ShipType;
 }
 
 export const SKILLS: Record<SkillName, SkillConfig> = {
-  SCAN: {
-    id: "SCAN",
-    displayName: "📡 SCAN",
-    description: "Revela un área de 3x3 (3 AP)",
+  DRONE_RECON: {
+    id: "DRONE_RECON",
+    displayName: "📡 Dron Rec. (3)",
+    description: "Revela área 3x3 (Sin daño)",
     cost: 3,
     pattern: "SCAN_3X3",
+    linkedShip: ShipType.Carrier,
   },
-  AIRSTRIKE: {
-    id: "AIRSTRIKE",
-    displayName: "✈️ AIRSTRIKE",
-    description: "Ataque aéreo en línea (5 AP)",
-    cost: 5,
-    pattern: "CROSS_5",
+  X_IMPACT: {
+    id: "X_IMPACT",
+    displayName: "❌ Impacto X (4)",
+    description: "Daño en X (Centro + 4 Diagonales)",
+    cost: 4,
+    pattern: "CROSS_DIAGONAL",
+    linkedShip: ShipType.Battleship,
+  },
+  CHAOTIC_SALVO: {
+    id: "CHAOTIC_SALVO",
+    displayName: "🎲 Salva Caótica (3)",
+    description: "3 disparos aleatorios globales",
+    cost: 3,
+    pattern: "GLOBAL_RANDOM_3",
+    linkedShip: ShipType.Destroyer,
+  },
+  SONAR_TORPEDO: {
+    id: "SONAR_TORPEDO",
+    displayName: "🌊 Torpedo Sonar (3)",
+    description: "Línea recta desde borde hasta impacto",
+    cost: 3,
+    pattern: "LINE_RAY",
+    linkedShip: ShipType.Submarine,
+  },
+  REVEALING_SHOT: {
+    id: "REVEALING_SHOT",
+    displayName: "👁️ Disparo Rev. (2)",
+    description: "1x1. Si impacta, revela todo el barco",
+    cost: 2,
+    pattern: "SINGLE_REVEAL",
+    linkedShip: ShipType.Corvette,
   },
 };
 

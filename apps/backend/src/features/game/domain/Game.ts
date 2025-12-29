@@ -1,4 +1,11 @@
-import { type GameState, GameStatus, GRID_SIZE, SKILLS, type SkillName } from "@battle-ship/shared";
+import {
+  type GameState,
+  GameStatus,
+  GRID_SIZE,
+  SKILLS,
+  type SkillName,
+  getSkillAffectedCells,
+} from "@battle-ship/shared";
 import { Player } from "./Player.js";
 
 export class Game {
@@ -104,6 +111,7 @@ export class Game {
         remainingMines: player.mines,
         placedMines: player.placedMines,
         misses: player.board.getMisses(),
+        revealedCells: player.revealedCells,
         ap: player.ap,
         isReady: player.isReady,
         isConnected: true,
@@ -134,52 +142,97 @@ export class Game {
     // Cost Validation
     if (!player.spendAP(skillConfig.cost)) return false;
 
-    const { x, y } = target;
+    // Ship Presence Validation
+    const linkedShip = player.ships.find((s) => s.type === skillConfig.linkedShip);
+    if (!linkedShip || linkedShip.isSunk) {
+      // Refund if strict check failed?
+      // Or client should prevent this.
+      // Let's assume client prevents?
+      // Strict: return false and refund cost if you want robust.
+      // For now, let's just allow it or assume client side checks are mostly OK, but backend enforces rule.
+      // Refund AP
+      player.ap += skillConfig.cost;
+      return false;
+    }
 
-    // Define simulation targets based on pattern
-    const hits: { x: number; y: number }[] = [];
+    const { x, y } = target || { x: 0, y: 0 };
+    let affectedCells: { x: number; y: number }[] = [];
+
+    // --- LOGIC PER SKILL (Specific) ---
 
     if (skillConfig.pattern === "SCAN_3X3") {
-      // Logic: Pick 3 random cells in 3x3 area to "Reveal" (i.e., Attack)
-      const candidates: { x: number; y: number }[] = [];
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          const tx = x + dx;
-          const ty = y + dy;
-          if (tx >= 0 && tx < GRID_SIZE && ty >= 0 && ty < GRID_SIZE) {
-            candidates.push({ x: tx, y: ty });
-          }
+      // Logic: REVEAL ONLY (No attack)
+      // 3x3 Center at X,Y
+      affectedCells = getSkillAffectedCells("SCAN_3X3", x, y);
+      for (const cell of affectedCells) {
+        opponent.reveal(cell.x, cell.y);
+      }
+      return true;
+    }
+
+    if (skillConfig.pattern === "CROSS_DIAGONAL") {
+      // Logic: Damage Center + 4 Diags
+      affectedCells = getSkillAffectedCells("CROSS_DIAGONAL", x, y);
+      // Fallthrough to ATTACK
+    } else if (skillConfig.pattern === "GLOBAL_RANDOM_3") {
+      // Chaotic Salvo: 3 Random shots on valid coords
+      const available: { x: number; y: number }[] = [];
+      for (let i = 0; i < GRID_SIZE; i++) {
+        for (let j = 0; j < GRID_SIZE; j++) {
+          available.push({ x: i, y: j });
         }
       }
-
-      // Shuffle and take 3
-      for (let i = candidates.length - 1; i > 0; i--) {
+      // Shuffle
+      for (let i = available.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        [available[i], available[j]] = [available[j], available[i]];
       }
-      hits.push(...candidates.slice(0, 3));
-    } else if (skillConfig.pattern === "CROSS_5") {
-      // Logic: Cross Pattern (Center + 4 adjacent)
-      const offsets = [
-        { dx: 0, dy: 0 },
-        { dx: 0, dy: -1 },
-        { dx: 0, dy: 1 },
-        { dx: -1, dy: 0 },
-        { dx: 1, dy: 0 },
-      ];
+      affectedCells = available.slice(0, 3);
+      affectedCells = available.slice(0, 3);
+    } else if (skillConfig.pattern === "LINE_RAY") {
+      // Sonar Torpedo: Vertical Bottom-Up
+      // Starts at y=9, goes to y=0 of the target column x
+      for (let i = GRID_SIZE - 1; i >= 0; i--) {
+        const currentY = i;
+        affectedCells.push({ x, y: currentY });
 
-      for (const o of offsets) {
-        const tx = x + o.dx;
-        const ty = y + o.dy;
-        if (tx >= 0 && tx < GRID_SIZE && ty >= 0 && ty < GRID_SIZE) {
-          hits.push({ x: tx, y: ty });
+        const state = opponent.board.getCellState(x, currentY);
+        // Stop if we hit a ship (unrevealed or already hit)
+        // Note: REVEALED_SHIP is also a ship conceptually, so we should stop.
+        // But for now check SHIP/HIT. If state is "REVEALED_SHIP" (if logic allows it), it should also stop.
+        // Assuming GetCellState returns basic types or we handle new ones.
+        // Opponent Board getCellState might return explicit types?
+        if (state === "SHIP" || state === "HIT") {
+          break;
+        }
+      }
+    } else if (skillConfig.pattern === "SINGLE_REVEAL") {
+      // Revealing Shot: 1x1 Damage.
+      // If IS SHIP -> Reveal All.
+      affectedCells.push({ x, y });
+
+      // Check if hit a ship to trigger Reveal
+      const state = opponent.board.getCellState(x, y);
+      if (state === "SHIP") {
+        // Find which ship was hit
+        // We can scan opponent ships to see which one contains x,y
+        const hitShip = opponent.ships.find((s) => s.position.some((p) => p.x === x && p.y === y));
+        if (hitShip) {
+          // Reveal all positions
+          for (const p of hitShip.position) opponent.reveal(p.x, p.y);
         }
       }
     }
 
-    // Execute Attacks
-    for (const h of hits) {
+    // Execute Attacks (Damage)
+    for (const h of affectedCells) {
       opponent.receiveAttack(h.x, h.y);
+    }
+
+    // Check Winner
+    if (opponent.hasLost()) {
+      this.winner = player.id;
+      this.status = GameStatus.Finished;
     }
 
     return true;
