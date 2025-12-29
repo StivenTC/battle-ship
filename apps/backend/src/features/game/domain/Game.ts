@@ -202,7 +202,7 @@ export class Game {
         // But for now check SHIP/HIT. If state is "REVEALED_SHIP" (if logic allows it), it should also stop.
         // Assuming GetCellState returns basic types or we handle new ones.
         // Opponent Board getCellState might return explicit types?
-        if (state === "SHIP" || state === "HIT") {
+        if (state === "SHIP") {
           break;
         }
       }
