@@ -1,0 +1,113 @@
+@use "../../styles/tokens/mixins" as *;
+
+.header {
+  @include glass-header;
+  @include flex-center;
+  
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  z-index: 1000;
+  transition: box-shadow var(--duration-fast);
+  
+  // Minimal red flash on damage
+  &.damage {
+    animation: flashRed 0.5s ease-out;
+  }
+}
+
+@keyframes flashRed {
+  0% { background: rgba(239, 68, 68, 0.4); }
+  100% { background: var(--color-glass-header); }
+}
+
+.playerSection {
+  @include flex-center;
+  gap: var(--space-2);
+}
+
+.playerName {
+  @include text-heading;
+  font-size: 0.9rem;
+  color: var(--color-primary);
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.connectionDot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-success);
+  border-radius: 50%;
+  box-shadow: 0 0 5px var(--color-success);
+  
+  // Animation pulse
+  animation: pulseDot 2s infinite;
+}
+
+@keyframes pulseDot {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.logoSection {
+  @include flex-center;
+}
+
+.gameTitle {
+  font-family: 'Inter', sans-serif; // Fallback
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  font-size: 1rem;
+  color: #fff;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.roomSection {
+  @include flex-center;
+  gap: var(--space-2);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.roomCode {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--color-accent-cyan);
+}
+
+.copyBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  padding: 0;
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+// Mobile Adjustments
+@media (max-width: 480px) {
+  .gameTitle {
+    display: none; // Save space on tiny screens
+  }
+  
+  .header {
+    height: 50px;
+  }
+}

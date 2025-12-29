@@ -1,87 +1,81 @@
-# 📱 "Océano Ciego" - Design System & Technical Specs
-**Theme:** Tactical Radar (Dark Mode / High Contrast)
-**Approach:** Mobile-First, Fixed-Unit Grid, SVG-based.
+# 📱 OCÉANO CIEGO: Sistema de Diseño & UX (Especificación Premium)
+
+**Estilo General**: Minimalista, "Neon Radar", Glassmorphism, Mobile-First (Dribbble-Inspired).
 
 ---
 
-## 1. The Grid System (Strict 32px Base)
-We are moving from a fluid grid to a **fixed-unit grid** to ensure asset crispness and consistent spacing across devices.
+## 1. El Encabezado Unificado (The Unified Header)
+**Arquitectura**: Una sola fila minimalista. Eliminar etiquetas de texto innecesarias ("Estado: Jugando").
+**Composición Flex**:
+- **Izquierda**: `[Nickname Jugador]` + `[Indicador Conexión (Punto Neón)]`.
+- **Centro**: `[Logo Simplificado / Sans-Serif Espaciado]`.
+- **Derecha**: `[Código Sala]` + `[Icono Copiar]`.
 
-### Dimensions
-* **Grid Layout:** 10 columns x 10 rows.
-* **Base Cell Size:** \`32px\` (Fixed).
-* **Total Board Width:** \`320px\`.
-* **Alignment:**
-    * The grid container must be **centered horizontally** (\`margin: 0 auto\`).
-    * On devices narrower than 340px, revert to \`100%\` width, but for standard mobile (360px+), keep it fixed at 320px.
-
-### Spacing & Layout
-* **Padding/Margins:**
-    * On a standard 360px Android: Leaves \`20px\` whitespace per side (Comfortable).
-    * On a standard 390px iPhone: Leaves \`35px\` whitespace per side (Spacious).
-* **Gap:** \`1px\` (Visual separator).
+**Estilo Visual**:
+- **Fondo**: Glassmorphism puro (`rgba(255, 255, 255, 0.05)`).
+- **Efecto**: `backdrop-filter: blur(12px)`.
+- **Borde**: Inferior de 1px muy sutil (`rgba(255, 255, 255, 0.1)`).
+- **Feedback**: El header completo parpadea en Rojo tenue brevemente al recibir daño / notificación crítica.
 
 ---
 
-## 2. Color Palette (Variables)
-Use CSS Custom Properties (Variables) for consistency.
-
-\`\`\`css
-:root {
-  /* -- Backgrounds -- */
-  --color-bg-deep: #0a192f;      /* Main app background */
-  --color-bg-grid: #112240;      /* Grid cell background */
-
-  /* -- Radar / Allies -- */
-  --color-radar-primary: #64ffda; /* Neon Cyan (Ships, UI borders) */
-  --color-radar-dim: rgba(100, 255, 218, 0.1); /* Ship fill */
-
-  /* -- Combat States -- */
-  --color-hit: #ff5555;          /* Red (Hit / Enemy) */
-  --color-miss: #8892b0;         /* Grey/Blue (Miss / Water splash) */
-  --color-sunk: #ff0000;         /* Bright Red (Ship Sunk) */
-
-  /* -- Typography -- */
-  --color-text-main: #ccd6f6;    /* Off-white */
-  --color-text-muted: #8892b0;   /* Secondary text */
-}
-\`\`\`
+## 2. El Astillero (Selección de Barcos)
+**Problema**: Grillas de tarjetas pequeñas son ilegibles en móvil.
+**Solución**: **Carrusel Horizontal** o **Scroll Vertical** de Tarjetas Grandes.
+- **Diseño de Tarjeta**: Ancho completo (o casi completo con peek del siguiente).
+- **Contenido**: Nombre del barco grande, Estadísticas claras, Botón de selección fácil de tocar.
+- **Estética**: Contornos de barcos en Neón (Cian), evitar bloques sólidos negros.
 
 ---
 
-## 3. Typography
-Use a Monospaced or Technical font.
-* **Font Family:** 'Roboto Mono', 'Fira Code', monospace.
-* **Base Size:** 14px.
-* **Headers:** Uppercase, tracking (letter-spacing) \`1.5px\`.
+## 3. Fase Táctica (Posicionamiento)
+**Optimización de Espacio**:
+- **Metadata**: Ocultar ID de partida y Capitán durante esta fase para ganar altura vertical.
+- **Barcos**: Representados como contornos luminosos (Wireframe style).
+- **Grilla**: Debe ocupar el ancho máximo disponible.
 
 ---
 
-## 4. Ship Assets (Fixed SVG Dimensions)
-Since cells are strictly 32px, we can define precise pixel dimensions for the SVG assets, ensuring pixel-perfect rendering.
+## 4. La Grilla de Combate (The Grid Morph)
+**Dimensiones Visuales**: **6 celdas alto** x **8 celdas ancho** (Optimización vertical móvil).
+- *Nota Técnica*: Si la lógica interna permanece en 10x10, esto puede requerir adaptación o scroll, pero la especificación visual prioritaria es 6x8.
 
-**Scaling Rule:**
-* **1 Cell = 32px.**
-* **Stroke:** \`2px\` (Constant).
+**Identidad de Color**:
+- **Grilla Propia (Defensa)**: Fondo Azul Profundo (`#0f172a`), Acentos/Bordes **Cian Neón** (`#22d3ee`).
+- **Grilla Enemiga (Ataque)**: Fondo Casi Negro (`#020617`), Acentos/Bordes **Ámbar/Rojo Táctico** (`#f59e0b`).
+- **Estilo de Celda**: Bordes ultra-finos (0.5px), opacidad baja. Efecto de "escaneo" en celdas enemigas.
 
-| Ship Class (Code) | Size (Cells) | Pixel Dimensions (approx) | Placeholder Shape |
-| :--- | :--- | :--- | :--- |
-| \`Carrier\` | **5** | **160px x 32px** | Long rectangle + Runway line. |
-| \`Battleship\` | **4** | **128px x 32px** | Robust rectangle + 3 Turrets. |
-| \`Destroyer\` | **3** | **96px x 32px** | Medium rectangle + 2 Turrets. |
-| \`Submarine\` | **3** | **96px x 32px** | Pill shape (Rounded caps). |
-| \`Corvette\` | **2** | **64px x 32px** | Short rectangle + 1 Turret. |
-
-*Note: The "Pixel Dimensions" include the grid gap in the visual calculation, but for the SVG viewBox, assume standard multiples of 32.*
+**Transiciones (3D Parallax)**:
+- **Cambio de Turno**: No usar deslizamiento lateral plano.
+- **Animación**:
+    1.  Grilla Saliente: Zoom-out ligero (scale 0.9) + Rotación Y (10deg) + Fade Out.
+    2.  Grilla Entrante: Fade In + Zoom-in a escala normal (1).
+- **Interacción**: Swipe manual con efecto "Rubber Banding" (resistencia elástica) en los bordes.
 
 ---
 
-## 5. UI Components & Interaction
+## 5. Interfaz de Habilidades (Combat Footer)
+**Concepto**: "Slices" minimalistas. Eliminar todo texto posible.
+**Layout**: Fila horizontal de iconos en la parte inferior.
 
-### Touch Targets
-* Since **32px** is below the recommended 44px touch target size, interactions (tapping a cell) must be handled carefully.
-* **Implementation Note:** Ensure the click listener is attached to the *Cell* container, not just the center point, to maximize the hit area.
+**Componentes**:
+- **Iconos**: Estrictamente **Monocromáticos y Vectoriales** (Ej: Dron simple, Cruz, Torpedo lineal).
+- **Indicadores Costo**: Pequeño "Badge" numérico en la esquina superior derecha del icono (ej. un pequeño "3").
+- **Estados**:
+    - **Activo**: Opacidad 100%, Glow sutil del color del tema.
+    - **Inactivo (AP Insuficiente)**: Escala de grises, Opacidad 30%.
+- **Interacción**: Long-press (mantener pulsado) para ver el nombre de la habilidad.
 
-### Visual States
-* **Selection:** When a user selects a ship to place, highlight valid grid slots in \`--color-radar-dim\`.
-* **Error:** If placement is invalid (overlap), pulse the ship in \`--color-hit\`.
+**Barra de Energía (AP)**:
+- Contador numérico simple (ej. `4/6`).
+- Barra de progreso de 1px de grosor que brilla con el color de energía.
+
+---
+
+## 6. Feedback & Efectos (Juice)
+- **Daño Recibido**: "Screen Shake" breve + Flash rojo tenue en fondo.
+- **Victoria/Derrota**:
+    - Fondo: Blur total de la interfaz de juego.
+    - Texto: Tipografía con tracking amplio ("V I C T O R I A").
+    - Efecto: Glow externo para profundidad.
+- **Micro-interacciones**: Transiciones suaves (200ms) en hover/tap de celdas y botones.

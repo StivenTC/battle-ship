@@ -11,6 +11,7 @@ import styles from "./App.module.scss";
 import "./index.scss";
 
 import { CombatView } from "./components/game/PhaseCombat/CombatView";
+import { GameHeader } from "./components/layout/GameHeader";
 import { PlacementBoard } from "./components/game/PhaseTactical/PlacementBoard";
 // LobbyScreen imported above
 // Grid is no longer imported directly here
@@ -53,21 +54,7 @@ const GameContainer = () => {
 
   return (
     <div className={styles.appWrapper}>
-      <h1 className={styles.appHeader}>Battleship</h1>
-      {/* 
-        Game Info Header could be inside specific views or global. 
-        For now, let's keep it global if game exists 
-      */}
-      {gameState && (
-        <div className={styles.gameInfo}>
-          Partida ID: <strong>{gameState.id}</strong>
-          <span style={{ marginLeft: 10 }}>
-            {" | "} Capitan: <strong>{playerName}</strong>
-          </span>
-          <span style={{ marginLeft: 10 }}> | Estado: {gameState.status}</span>
-        </div>
-      )}
-
+      <GameHeader />
       {renderPhase()}
     </div>
   );

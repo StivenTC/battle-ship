@@ -8,6 +8,19 @@
   box-shadow: var(--shadow-lg);
 }
 
+@mixin glass-header {
+  background: var(--color-glass-header);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+@mixin neon-border($color) {
+  border: 1px solid $color;
+  box-shadow: 0 0 8px rgba($color, 0.4);
+}
+
 @mixin flex-center {
   display: flex;
   align-items: center;
