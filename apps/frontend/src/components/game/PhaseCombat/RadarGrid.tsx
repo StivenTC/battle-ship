@@ -1,4 +1,4 @@
-import { type CellState, type SkillConfig } from "@battle-ship/shared";
+import type { CellState, SkillConfig } from "@battle-ship/shared";
 import { useGame } from "../../../hooks/useGame";
 import { Grid } from "../Grid/Grid";
 import { forwardRef } from "react";
@@ -25,38 +25,26 @@ export const RadarGrid = forwardRef<HTMLDivElement, RadarGridProps>(
     // Build Custom State Map
     const customStates = new Map<string, CellState>();
 
-    // 1. Hits
-    if (enemy.ships) {
-      for (const ship of enemy.ships) {
-        if (ship.hits) {
-          for (const h of ship.hits) {
-            customStates.set(`${h.x},${h.y}`, "HIT");
-          }
-        }
+    const myPlayer = gameState && playerId ? gameState.players[playerId] : null;
+
+    // 1. Revealed Helpers (Base Layer)
+    if (myPlayer?.revealedCells) {
+      for (const r of myPlayer.revealedCells) {
+        customStates.set(`${r.x},${r.y}`, r.status);
       }
     }
-    // Also include 'hits' array from player object if available
-    if (enemy.hits) {
-      for (const h of enemy.hits) {
+
+    // 2. Hits (What *I* hit on the enemy)
+    if (myPlayer?.hits) {
+      for (const h of myPlayer.hits) {
         customStates.set(`${h.x},${h.y}`, "HIT");
       }
     }
 
-    // 2. Misses
-    if (enemy.misses) {
-      for (const m of enemy.misses) {
+    // 3. Misses (What *I* missed)
+    if (myPlayer?.misses) {
+      for (const m of myPlayer.misses) {
         customStates.set(`${m.x},${m.y}`, "MISS");
-      }
-    }
-
-    // 3. Revealed
-    if (enemy.revealedCells) {
-      for (const r of enemy.revealedCells) {
-        // If it's already HIT/MISS, don't overwrite with REVEALED unless we want to allow seeing content of hit cells?
-        // Usually HIT overrides revealed status visually, but content helps.
-        // Cell component prioritizes specific state.
-        // Let's rely on backend 'status' in RevealedCell which is CellState
-        customStates.set(`${r.x},${r.y}`, r.status);
       }
     }
 

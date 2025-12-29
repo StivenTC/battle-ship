@@ -150,21 +150,15 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     // Attack Logic
-    const opponentId = Array.from(game.players.keys()).find((id) => id !== dto.playerId);
-    if (!opponentId) return;
-    const opponent = game.players.get(opponentId);
+    const success = game.attack(dto.playerId, dto.x, dto.y);
 
-    if (opponent) {
-      opponent.receiveAttack(dto.x, dto.y);
-
-      // CHECK WIN CONDITION
-      if (opponent.hasLost()) {
-        await this.gameManager.handleGameOver(game, dto.playerId);
-      } else {
-        game.switchTurn();
+    if (success) {
+      if (game.winner) {
+        await this.gameManager.handleGameOver(game, game.winner);
       }
-
       this.emitGameState(game);
+    } else {
+      this.handleError(client, "Attack failed (Invalid turn or not enough AP)");
     }
   }
   @SubscribeMessage(GameEvents.USE_SKILL)

@@ -191,4 +191,48 @@ export class Game {
 
     return true;
   }
+  attack(playerId: string, x: number, y: number): boolean {
+    if (this.status !== GameStatus.Combat || this.turn !== playerId) return false;
+
+    const player = this.players.get(playerId);
+    const opponentId = Array.from(this.players.keys()).find((id) => id !== playerId);
+    const opponent = opponentId ? this.players.get(opponentId) : null;
+
+    if (!player || !opponent) return false;
+
+    // Standard Attack Cost: 1 AP
+    if (!player.spendAP(1)) return false;
+
+    // Execute Attack
+    const outcome = opponent.receiveAttack(x, y);
+
+    // Register Stats for Attacker
+    if (outcome.result === "HIT" || outcome.result === "SUNK") {
+      player.addHit(x, y);
+    } else if (outcome.result === "MISS") {
+      player.misses.push({ x, y });
+    }
+
+    // Check Win
+    if (opponent.hasLost()) {
+      this.winner = player.id;
+      this.status = GameStatus.Finished;
+    } else {
+      // Standard attack usually ends turn? Or just consumes AP?
+      // If we want to allow multiple shots, we don't switch turn automatically unless AP is out?
+      // Gateway logic was: game.switchTurn().
+      // Let's stick to Gateway logic: 1 shot per turn?
+      // But premium has AP system. If I have 6 AP, can I shoot 6 times?
+      // "switchTurn" in Gateway implies 1 shot per turn.
+      // BUT `ap` exists.
+      // If we assume AP system, we should NOT switch turn automatically.
+      // However, existing `GameGateway` switched turn.
+      // Let's assume standard behavior for now: Switch turn after attack.
+      // Or if using AP, maybe attacks cost 1 AP and you can keep going?
+      // Let's replicate Gateway logic: switchTurn()
+      this.switchTurn();
+    }
+
+    return true;
+  }
 }

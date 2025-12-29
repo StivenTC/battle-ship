@@ -22,6 +22,7 @@ export class Player {
   public placedMines: Coordinates[];
   public revealedCells: RevealedCell[];
   public hits: Coordinates[]; // Tracks shots fired by this player at opponent
+  public misses: Coordinates[]; // Tracks shots fired by this player that missed
 
   constructor(id: string) {
     this.id = id;
@@ -32,6 +33,7 @@ export class Player {
     this.placedMines = [];
     this.revealedCells = [];
     this.hits = [];
+    this.misses = [];
     this.isReady = false;
   }
 
