@@ -99,7 +99,7 @@ export interface SkillConfig {
 export const SKILLS: Record<SkillName, SkillConfig> = {
   DRONE_RECON: {
     id: "DRONE_RECON",
-    displayName: "📡 Dron Rec. (3)",
+    displayName: "📡 Dron Recon (3)",
     description: "Revela área 3x3 (Sin daño)",
     cost: 3,
     pattern: "SCAN_3X3",
@@ -107,7 +107,7 @@ export const SKILLS: Record<SkillName, SkillConfig> = {
   },
   X_IMPACT: {
     id: "X_IMPACT",
-    displayName: "❌ Impacto X (4)",
+    displayName: "❌ Impacto Cruzado (4)",
     description: "Daño en X (Centro + 4 Diagonales)",
     cost: 4,
     pattern: "CROSS_DIAGONAL",
@@ -115,7 +115,7 @@ export const SKILLS: Record<SkillName, SkillConfig> = {
   },
   CHAOTIC_SALVO: {
     id: "CHAOTIC_SALVO",
-    displayName: "🎲 Salva Caótica (3)",
+    displayName: "💣 Bombardeo (3)",
     description: "3 disparos aleatorios globales",
     cost: 3,
     pattern: "GLOBAL_RANDOM_3",
@@ -123,7 +123,7 @@ export const SKILLS: Record<SkillName, SkillConfig> = {
   },
   SONAR_TORPEDO: {
     id: "SONAR_TORPEDO",
-    displayName: "🌊 Torpedo Sonar (3)",
+    displayName: "🌊 Torpedo (3)",
     description: "Línea recta desde borde hasta impacto",
     cost: 3,
     pattern: "LINE_RAY",
@@ -131,7 +131,7 @@ export const SKILLS: Record<SkillName, SkillConfig> = {
   },
   REVEALING_SHOT: {
     id: "REVEALING_SHOT",
-    displayName: "👁️ Disparo Rev. (2)",
+    displayName: "📍 Baliza (2)",
     description: "1x1. Si impacta, revela todo el barco",
     cost: 2,
     pattern: "SINGLE_REVEAL",

@@ -1,154 +1,228 @@
+@use "../../../styles/tokens/mixins" as *;
+
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  justify-content: center;
   width: 100%;
-  max-width: 800px;
-  padding: 2rem;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  border: 1px solid #334155;
+  height: 100%;
+  padding: var(--space-4) 0;
+  padding-top: 60px;
+  overflow: hidden;
 }
 
 .title {
-  color: #06b6d4;
-  font-size: 2rem;
-  letter-spacing: 0.1em;
-  margin: 0;
-  text-transform: uppercase;
+  @include text-heading;
+  font-size: 1.2rem;
+  color: var(--color-accent-cyan);
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
+  margin-bottom: var(--space-2);
 }
 
 .subtitle {
-  color: #94a3b8;
-  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+// Carousel Container
+.carouselWrapper {
   width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  display: flex;
+  gap: var(--space-4);
+  padding: 0 var(--space-6); 
+  padding-bottom: var(--space-4);
+  
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .card {
+  @include glass-panel;
+  flex: 0 0 85%;
+  max-width: 320px; 
+  scroll-snap-align: center;
+  
   display: flex;
   flex-direction: column;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  padding: 1rem;
+  
+  // Height auto to fit content comfortably, but fixed min-height for uniformity
+  min-height: 400px;
+  
+  padding: var(--space-4);
+  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-fast);
   position: relative;
-  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 
-  &:hover:not(.disabled) {
-    border-color: #06b6d4;
-    transform: translateY(-2px);
-  }
-
+  // Selected State
   &.selected {
-    border-color: #06b6d4;
-    background: rgba(6, 182, 212, 0.1);
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
-
-    &::after {
-      content: "✓";
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      color: #06b6d4;
-      font-weight: bold;
-    }
+    @include neon-border(var(--color-accent-cyan));
+    background: rgba(34, 211, 238, 0.05);
+    // User requested NO checkmark, so we remove the ::after block
   }
 
   &.disabled {
-    opacity: 0.5;
+    opacity: 0.4;
+    filter: grayscale(1);
     cursor: not-allowed;
-    filter: grayscale(0.8);
   }
 }
 
 .cardHeader {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: var(--space-2);
 }
 
 .shipName {
-  color: #f1f5f9;
-  font-weight: 600;
+  @include text-heading;
+  font-size: 1.1rem;
+  color: var(--color-primary);
 }
 
-.shipSize {
-  color: #94a3b8;
-  font-size: 0.875rem;
+// Visual Size Indicator (Squares)
+.sizeIndicator {
+  display: flex;
+  gap: 2px;
+}
+
+.sizePip {
+  width: 12px;
+  height: 12px;
+  background: var(--color-bg-deep);
+  border: 1px solid var(--color-text-tertiary);
+  
+  // Selected state logic handled via parent class if needed, or static is fine
+  .selected & {
+    background: var(--color-accent-cyan);
+    border-color: var(--color-accent-cyan);
+    box-shadow: 0 0 5px var(--color-accent-cyan);
+  }
 }
 
 .shipPreview {
-  height: 60px;
-  background: rgba(0, 0, 0, 0.2);
-  margin-bottom: 1rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #475569;
-  font-size: 0.75rem;
+  flex-grow: 1;
+  @include flex-center;
+  margin: var(--space-4) 0;
+  min-height: 120px;
+  
+  // Scale down the SVG if it's huge
+  & > svg {
+    max-width: 100%;
+    filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+  }
 }
 
 .cardFooter {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.75rem;
+  gap: var(--space-2);
+  background: rgba(0, 0, 0, 0.3);
+  padding: var(--space-3);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.skillRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
 
 .skillLabel {
-  color: #38bdf8;
+  font-weight: bold;
+  color: var(--color-accent-orange);
+  text-transform: uppercase;
 }
 
 .costLabel {
-  color: #e2e8f0;
+  color: var(--color-text-primary);
+  font-weight: bold;
 }
 
+.skillDesc {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-style: italic;
+  line-height: 1.3;
+  font-size: 0.8rem;
+}
+
+// Footer Controls
 .footer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
   width: 100%;
-  border-top: 1px solid #334155;
-  padding-top: 1.5rem;
+  padding: var(--space-4);
+  @include flex-center;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: auto;
+  
+  background: rgba(15, 23, 42, 0.9); // More opaque for readability
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
 }
 
 .counter {
-  color: #f1f5f9;
+  font-family: 'Roboto Mono', monospace;
+  color: var(--color-text-main);
+  font-size: 0.9rem;
+  
+  strong {
+    color: var(--color-accent-cyan);
+    font-size: 1.1rem;
+  }
 }
 
 .confirmButton {
-  background: #06b6d4;
-  color: white;
-  border: none;
-  padding: 1rem 3rem;
-  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+  height: 54px;
+  background: var(--color-accent-cyan);
+  color: var(--color-bg-deep);
+  font-weight: 900;
   font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: all 0.2s;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
   text-transform: uppercase;
-
-  &:hover:not(:disabled) {
-    background: #0891b2;
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
-  }
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all var(--duration-fast);
 
   &:disabled {
-    opacity: 0.5;
+    background: var(--color-text-muted);
+    box-shadow: none;
     cursor: not-allowed;
-    background: #475569;
+    opacity: 0.5;
+  }
+
+  &:not(:disabled):active {
+    transform: scale(0.98);
+  }
+}
+
+@media (min-width: 768px) {
+  .carouselWrapper {
+    justify-content: center;
+    flex-wrap: wrap; 
+    overflow: visible;
+  }
+  
+  .card {
+     flex: 0 0 280px; 
   }
 }

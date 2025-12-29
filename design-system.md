@@ -21,14 +21,30 @@
 
 ## 2. El Astillero (Selección de Barcos)
 **Problema**: Grillas de tarjetas pequeñas son ilegibles en móvil.
-**Solución**: **Carrusel Horizontal** o **Scroll Vertical** de Tarjetas Grandes.
-- **Diseño de Tarjeta**: Ancho completo (o casi completo con peek del siguiente).
-- **Contenido**: Nombre del barco grande, Estadísticas claras, Botón de selección fácil de tocar.
-- **Estética**: Contornos de barcos en Neón (Cian), evitar bloques sólidos negros.
+**Solución**: **Carrusel Horizontal** (Scroll Snap).
+- **Diseño de Tarjeta**: Ancho dominante (85vw) para enfoque total en móvil.
+- **Visualización**:
+  - **Centro**: Renderizado SVG real del barco (`ShipAsset`) en lugar de iconos genéricos.
+  - **Indicadores**: Cuadros visuales (`sizePips`) para el tamaño.
+  - **Info**: Habilidad en mayúsculas, Costo como "⚡ [N]".
+  - **Estilo**: Borde Neón al seleccionar. **Sin checkmark** superpuesto (limpieza visual).
 
 ---
 
-## 3. Fase Táctica (Posicionamiento)
+## 3. Habilidades Tácticas (Nombres & Efectos)
+**Tema**: Militar / Tecnológico.
+
+| Barco | Habilidad | Costo | Descripción |
+| :--- | :--- | :--- | :--- |
+| **Portaviones** | `DRON RECON` | 3 AP | Revela área 3x3 (Sin daño). |
+| **Acorazado** | `IMPACTO CRUZADO` | 4 AP | Ataque en 'X' (Centro + 4 diagonales). |
+| **Destructor** | `BOMBARDEO` | 3 AP | 3 disparos aleatorios globales. |
+| **Submarino** | `TORPEDO` | 3 AP | Ataque en línea recta desde un borde. |
+| **Corbeta** | `BALIZA` | 2 AP | 1x1. Revela todo el barco si impacta. |
+
+---
+
+## 4. Fase Táctica (Posicionamiento)
 **Optimización de Espacio**:
 - **Metadata**: Ocultar ID de partida y Capitán durante esta fase para ganar altura vertical.
 - **Barcos**: Representados como contornos luminosos (Wireframe style).
