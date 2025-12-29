@@ -5,6 +5,8 @@ import {
   SKILLS,
   type SkillName,
   getSkillAffectedCells,
+  type Player as PlayerState,
+  type CellState,
 } from "@battle-ship/shared";
 import { Player } from "./Player.js";
 
@@ -101,21 +103,36 @@ export class Game {
     }
   }
 
-  toState(): GameState {
+  // Secure Fog of War State Generation
+  toState(viewerId: string): GameState {
     const playersRecord: GameState["players"] = {};
+
     for (const [id, player] of this.players) {
-      playersRecord[id] = {
+      const isViewer = id === viewerId; // Is this me?
+      const isOpponent = !isViewer; // Is this the enemy?
+
+      // Base public info
+      const publicPlayer: PlayerState = {
         id: player.id,
-        name: player.id, // Placeholder
-        ships: player.ships,
-        remainingMines: player.mines,
-        placedMines: player.placedMines,
+        name: player.id,
         misses: player.board.getMisses(),
         revealedCells: player.revealedCells,
         ap: player.ap,
         isReady: player.isReady,
         isConnected: true,
+
+        // SENSITIVE DATA MASKS:
+        // Ships: Only show ships if it's ME, or if they are SUNK (for opponent).
+        ships: isViewer
+          ? player.ships
+          : player.ships.map((s) => (s.isSunk ? s : { ...s, position: [] })), // Hide position of non-sunk ships
+
+        // Mines: Only show MY mines.
+        remainingMines: player.mines,
+        placedMines: isViewer ? player.placedMines : [],
       };
+
+      playersRecord[id] = publicPlayer;
     }
 
     return {
@@ -127,6 +144,7 @@ export class Game {
       winner: this.winner,
     };
   }
+
   useSkill(playerId: string, skillName: SkillName, target: { x: number; y: number }): boolean {
     if (this.status !== GameStatus.Combat || this.turn !== playerId) return false;
 
@@ -145,11 +163,6 @@ export class Game {
     // Ship Presence Validation
     const linkedShip = player.ships.find((s) => s.type === skillConfig.linkedShip);
     if (!linkedShip || linkedShip.isSunk) {
-      // Refund if strict check failed?
-      // Or client should prevent this.
-      // Let's assume client prevents?
-      // Strict: return false and refund cost if you want robust.
-      // For now, let's just allow it or assume client side checks are mostly OK, but backend enforces rule.
       // Refund AP
       player.ap += skillConfig.cost;
       return false;
@@ -165,7 +178,10 @@ export class Game {
       // 3x3 Center at X,Y
       affectedCells = getSkillAffectedCells("SCAN_3X3", x, y);
       for (const cell of affectedCells) {
-        opponent.reveal(cell.x, cell.y);
+        // Get real state from Opponent Board
+        const realState = opponent.board.reveal(cell.x, cell.y); // Use new Board.reveal logic
+        // Update Player (Attacker) vision
+        player.reveal(cell.x, cell.y, realState);
       }
       return true;
     }
@@ -188,7 +204,6 @@ export class Game {
         [available[i], available[j]] = [available[j], available[i]];
       }
       affectedCells = available.slice(0, 3);
-      affectedCells = available.slice(0, 3);
     } else if (skillConfig.pattern === "LINE_RAY") {
       // Sonar Torpedo: Vertical Bottom-Up
       // Starts at y=9, goes to y=0 of the target column x
@@ -198,16 +213,18 @@ export class Game {
 
         const state = opponent.board.getCellState(x, currentY);
         // Stop if we hit a ship (unrevealed or already hit)
-        // Note: REVEALED_SHIP is also a ship conceptually, so we should stop.
-        // But for now check SHIP/HIT. If state is "REVEALED_SHIP" (if logic allows it), it should also stop.
-        // Assuming GetCellState returns basic types or we handle new ones.
-        // Opponent Board getCellState might return explicit types?
-        if (state === "SHIP") {
+        if (state === "SHIP" || state === "HIT" || state === "REVEALED_SHIP") {
+          // Note: "REVEALED_SHIP" counts as hittable? Yes.
           break;
         }
-        // Also stop if we hit a mine (it should be triggered)
-        const hasMine = opponent.placedMines.some((m) => m.x === x && m.y === currentY);
-        if (hasMine) {
+
+        // Also stop if we hit a mine?
+        // Sonar Torpedo logic: "Fire a linear torpedo ... until it hits a ship."
+        // Mines are not ships.
+        // But if it hits a mine?
+        // Usually torpedoes explode on mines.
+        // Let's assume yes.
+        if (opponent.placedMines.some((m) => m.x === x && m.y === currentY)) {
           break;
         }
       }
@@ -218,20 +235,25 @@ export class Game {
 
       // Check if hit a ship to trigger Reveal
       const state = opponent.board.getCellState(x, y);
-      if (state === "SHIP") {
+      if (state === "SHIP" || state === "REVEALED_SHIP" || state === "HIT") {
         // Find which ship was hit
-        // We can scan opponent ships to see which one contains x,y
         const hitShip = opponent.ships.find((s) => s.position.some((p) => p.x === x && p.y === y));
         if (hitShip) {
           // Reveal all positions
-          for (const p of hitShip.position) opponent.reveal(p.x, p.y);
+          for (const p of hitShip.position) {
+            const pState = opponent.board.reveal(p.x, p.y);
+            player.reveal(p.x, p.y, pState);
+          }
         }
       }
     }
 
     // Execute Attacks (Damage)
     for (const h of affectedCells) {
-      opponent.receiveAttack(h.x, h.y);
+      const outcome = opponent.receiveAttack(h.x, h.y);
+      if (outcome.result === "HIT" || outcome.result === "SUNK") {
+        player.addHit(h.x, h.y);
+      }
     }
 
     // Check Winner

@@ -1,4 +1,5 @@
 import {
+  type CellState,
   type Coordinates,
   MAX_AP,
   MINES_PER_PLAYER,
@@ -6,6 +7,10 @@ import {
   type ShipType,
 } from "@battle-ship/shared";
 import { Board } from "./Board.js";
+
+export interface RevealedCell extends Coordinates {
+  status: CellState;
+}
 
 export class Player {
   public readonly id: string;
@@ -15,7 +20,8 @@ export class Player {
   public mines: number;
   public isReady: boolean;
   public placedMines: Coordinates[];
-  public revealedCells: Coordinates[];
+  public revealedCells: RevealedCell[];
+  public hits: Coordinates[]; // Tracks shots fired by this player at opponent
 
   constructor(id: string) {
     this.id = id;
@@ -25,6 +31,7 @@ export class Player {
     this.mines = MINES_PER_PLAYER;
     this.placedMines = [];
     this.revealedCells = [];
+    this.hits = [];
     this.isReady = false;
   }
 
@@ -101,8 +108,6 @@ export class Player {
 
   checkMines(opponentMines: Coordinates[]): void {
     for (const mine of opponentMines) {
-      // Logic fix: Only trigger if there is a ship (Trap)
-      // Do not leave "MISS" markers for traps that hit nothing
       const currentState = this.board.getCellState(mine.x, mine.y);
       if (currentState === "SHIP") {
         const result = this.receiveAttack(mine.x, mine.y);
@@ -117,94 +122,74 @@ export class Player {
   ): { result: "HIT" | "MISS" | "SUNK"; shipId?: string; mineExploded?: boolean } {
     const outcome = this.board.receiveAttack(x, y);
 
-    // Helper to process a single result and update ship state
-    const processOutcome = (res: { result: "HIT" | "MISS" | "SUNK"; shipId?: string }) => {
-      if (res.result === "HIT" || res.result === "SUNK") {
-        const ship = this.ships.find((s) => s.id === res.shipId);
-        if (ship) {
-          // Deduplicate hits
-          if (!ship.hits.some((h) => h.x === x && h.y === y)) {
-            // Logic limitation: hits array only stores coord, not which part is hit if multiple shots land on same spot?
-            // Actually ship.hits is array of coords.
-            // Only add if not already there?
-            // Board tracks state "HIT", so we shouldn't get duplicate receiveAttack calls for same cell?
-            // But mines might hit adjacent cells already hit. Board handles that (returns cell.state).
-          }
-          ship.hits.push({ x, y }); // Simple tracking
-          if (res.result === "SUNK") {
-            ship.isSunk = true;
-          }
-        }
-      }
-    };
-
-    processOutcome(outcome);
-
-    // If mine exploded, it might have returned multiple results?
-    // Wait, Board.receiveAttack returns SINGLE result (center) but triggers internal damage.
-    // If we want to track ALL hits (side effects), Board.receiveAttack needs to return them or we trust Board state.
-    // Issue: Player.ships[i].hits must be updated for ALL affected cells.
-    // Board.receiveAttack current implementation only returns the CENTER result?
-    // Let's re-read Board.ts.
-    // Board.receiveAttack returns `{ ...centerRes, mineExploded: true }`.
-    // It calls `triggerMine` which calls `damageCell`. `damageCell` updates `this.ships` (Map in Board).
-    // BUT `Player.ships` is a separate array of objects! `this.ships`.
-    // We need to sync `Player.ships` with `Board.ships` or update `Player.ships` based on Board state?
-    // Syncing is safer.
-
-    // Sync logic:
+    // Sync ships with board state, especially important if mine exploded multiple cells
     if (outcome.mineExploded) {
-      // If mine exploded, multiple cells might have changed. Re-sync simple way:
-      // Iterate all my ships, check their coords against Board state.
-      for (const ship of this.ships) {
-        for (const pos of ship.position) {
-          // Accessing private board grid via helper or just trust the process?
-          // We need to know if it's hit.
-          // Hack: We can't easily access Board grid cells from here if private.
-          // But `Board` updates its internal `ships` map hits count.
-          // We should rely on Board to tell us status?
-          // Or make Player.ships the source of truth?
-          // Currently code duplicates state: Player has `ships[]`, Board has `grid[][]` and `ships Map`.
-          // Refactor risk!
-          // Simplest Fix: If mine exploded, iterate Board hits?
-          // Better: Board.triggerMine returned `affected` list. But Board.receiveAttack swallowed it.
-          // Let's trust that Board updated its internal state.
-          // We just need to update Player.ships 'isSunk' and 'hits' to match Board.
-          // Actually, Board.damageCell updates `ship.hits` in its Map.
-          // Does it update Player's ship instance? NO. Separate object.
+      this.syncShipsWithBoard();
+    } else if (outcome.result === "HIT" || outcome.result === "SUNK") {
+      // Optimization: For single hit, just update specific ship?
+      // But safer to just sync simplisticly if getting ship from ID.
+      if (outcome.shipId) {
+        const ship = this.ships.find((s) => s.id === outcome.shipId);
+        if (ship) {
+          const boardState = this.board.getShipState(ship.id);
+          if (boardState) {
+            ship.hits = []; // Re-calc hits? Or just push?
+            // Board.getShipState only returns counts.
+            // We need positions.
+            // Simplest is to trust Board has updated correct cell state.
+            // Update local ship hits array:
+            if (!ship.hits.some((h) => h.x === x && h.y === y)) {
+              ship.hits.push({ x, y });
+            }
+            ship.isSunk = boardState.isSunk;
+          }
         }
       }
-      // OK, I need to update Board.ts to return full explosion details OR provide a way to sync.
-      // Retrying Board.ts modification might be expensive.
-      // Alternative: Player.receiveAttack calls `board.receiveAttack`, then scans its own ships positions?
-      this.syncShipsWithBoard();
-    } else {
-      // Normal single hit process (already done above via processOutcome, but lets double check)
-      // Actually processOutcome logic above is redundant if we assume Board handled it?
-      // No, Board handles Board.ships. Player handles Player.ships.
-      // We must sync.
     }
 
     return outcome;
   }
 
-  reveal(x: number, y: number) {
-    if (!this.revealedCells.some((c) => c.x === x && c.y === y)) {
-      this.revealedCells.push({ x, y });
+  // Reveal logic now stores STATUS
+  // This is used when *I* am revealed by opponent? No.
+  // This function `reveal` is called on the VICTIM to register they are revealed?
+  // NO! `revealedCells` are cells I HAVE REVEALED on the ENEMY map.
+  // UseSkill calls `opponent.reveal()`.
+  // Wait. `Game.ts` calls `opponent.reveal()`.
+  // Does `opponent` store what *he* has revealed? Or what *has been revealed of him*?
+  // "revealedCells" in GameState usually means "What I can see of the enemy".
+  // SO logic: Player 1 has `revealedCells` -> These are cells on Player 2's board that P1 can see.
+  // CORRECT.
+
+  // So: `reveal(x, y, actualStateOfEnemyCell)`
+  reveal(x: number, y: number, state: CellState) {
+    const existing = this.revealedCells.find((c) => c.x === x && c.y === y);
+    if (!existing) {
+      this.revealedCells.push({ x, y, status: state });
+    } else {
+      // Update status if changed (e.g. was EMPTY now REVEALED_MINE?)
+      // Or strictly strictly overwrite
+      existing.status = state;
     }
   }
 
-  // New helper to sync because of Mine side-effects
+  addHit(x: number, y: number) {
+    if (!this.hits.some((h) => h.x === x && h.y === y)) {
+      this.hits.push({ x, y });
+    }
+  }
+
   private syncShipsWithBoard() {
     for (const ship of this.ships) {
-      ship.hits = []; // Re-build hits based on Board state
+      ship.hits = [];
       for (const pos of ship.position) {
         const state = this.board.getCellState(pos.x, pos.y);
+        // If board says HIT or REVEALED_SHIP (if that counts as hit? No, REVEALED is just visible)
+        // Only HIT counts for damage.
         if (state === "HIT") {
           ship.hits.push(pos);
         }
       }
-      // Update sunk status
       const boardState = this.board.getShipState(ship.id);
       if (boardState) ship.isSunk = boardState.isSunk;
     }

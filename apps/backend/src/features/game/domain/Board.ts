@@ -1,8 +1,6 @@
-import { type Coordinates, GRID_SIZE, type ShipType } from "@battle-ship/shared";
+import { type CellState, type Coordinates, GRID_SIZE, type ShipType } from "@battle-ship/shared";
 
-export type CellState = "EMPTY" | "SHIP" | "HIT" | "MISS";
-
-export interface Cell {
+interface Cell {
   x: number;
   y: number;
   state: CellState;
@@ -12,7 +10,7 @@ export interface Cell {
 
 export class Board {
   private grid: Cell[][];
-  private ships: Map<string, { type: ShipType; hits: number; size: number }>;
+  private ships: Map<string, { type: ShipType; hits: number; size: number; isSunk: boolean }>;
 
   constructor() {
     this.grid = this.initializeGrid();
@@ -50,7 +48,7 @@ export class Board {
       this.grid[y][x].shipId = id;
     }
 
-    this.ships.set(id, { type, hits: 0, size });
+    this.ships.set(id, { type, hits: 0, size, isSunk: false });
     return true;
   }
 
@@ -85,8 +83,6 @@ export class Board {
     for (const t of targets) {
       // Bounds check for explosion
       if (t.x >= 0 && t.x < GRID_SIZE && t.y >= 0 && t.y < GRID_SIZE) {
-        // Recursive attack, but bypass mine check to avoid infinite loops if mines are adjacent
-        // Actually, mines normally chain-react. For simplicity here, just damage the cell.
         const res = this.damageCell(t.x, t.y);
         affected.push(res);
       }
@@ -99,22 +95,45 @@ export class Board {
   private damageCell(x: number, y: number): { result: "HIT" | "MISS" | "SUNK"; shipId?: string } {
     const cell = this.grid[y][x];
 
-    if (cell.state === "HIT" || cell.state === "MISS") {
-      return { result: cell.state };
+    // Propagate existing state if already hit
+    if (cell.state === "HIT" || cell.state === "MISS" || cell.state === "REVEALED_MINE") {
+      // If it was a ship hit, return that info again?
+      // Ideally we don't re-process damage.
+      return { result: cell.state === "HIT" ? "HIT" : "MISS" };
+    }
+
+    // If it was just revealed but not hit yet?
+    // REVEALED_SHIP -> becomes HIT
+    // REVEALED_EMPTY -> becomes MISS
+    if (cell.state === "REVEALED_SHIP") {
+      cell.state = "HIT";
+      return this.processShipHit(cell);
+    }
+    if (cell.state === "REVEALED_EMPTY") {
+      cell.state = "MISS";
+      return { result: "MISS" };
     }
 
     if (cell.state === "SHIP" && cell.shipId) {
       cell.state = "HIT";
-      const ship = this.ships.get(cell.shipId);
-      if (ship) {
-        ship.hits++;
-        const isSunk = ship.hits >= ship.size;
-        return { result: isSunk ? "SUNK" : "HIT", shipId: cell.shipId };
-      }
+      return this.processShipHit(cell);
     }
 
+    // Default miss
     cell.state = "MISS";
     return { result: "MISS" };
+  }
+
+  private processShipHit(cell: Cell): { result: "HIT" | "SUNK"; shipId?: string } {
+    if (!cell.shipId) return { result: "HIT" }; // Should not happen
+
+    const ship = this.ships.get(cell.shipId);
+    if (ship) {
+      ship.hits++;
+      ship.isSunk = ship.hits >= ship.size;
+      return { result: ship.isSunk ? "SUNK" : "HIT", shipId: cell.shipId };
+    }
+    return { result: "HIT", shipId: cell.shipId };
   }
 
   receiveAttack(
@@ -131,18 +150,69 @@ export class Board {
     if (cell.hasMine) {
       console.log(`Mine found at ${x},${y}! BOOM!`);
       cell.hasMine = false; // Consume mine
-      // Trigger Explosion
+
+      // Update state to reflect exploded mine if it was empty?
+      // Or does the explosion turn it into a MISS/HIT?
+      // A mine consumes the cell. If there was no ship, it's a "Mine Hit" spot.
+      // But we need to return valid CellState.
+      // Let's say the center becomes "MISS" visually but we know it was a mine.
+      // Actually, if we want to show "Exploded Mine", we might need a specific state or just handling it in frontend.
+      // For now, let's treat it as damage.
+
       const explosionResults = this.triggerMine(x, y);
 
-      // Determine primary result based on center cell
-      // If center was a ship, it's a HIT/SUNK. Else it's a MISS (but with explosion side effects)
-      // The frontend needs to know it was a mine to show animation.
+      // The center result is what matters for the return value
       const centerRes = explosionResults[0];
       return { ...centerRes, mineExploded: true };
     }
 
     // 2. Normal Attack
     return this.damageCell(x, y);
+  }
+
+  // Reveal logic for Scanner
+  reveal(x: number, y: number): CellState {
+    if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return "MISS"; // Out of bounds
+
+    const cell = this.grid[y][x];
+
+    // If already interacting state, return it
+    if (
+      ["HIT", "MISS", "SUNK", "REVEALED_MINE", "REVEALED_SHIP", "REVEALED_EMPTY"].includes(
+        cell.state
+      )
+    ) {
+      return cell.state;
+    }
+
+    // Logic:
+    // Mine -> REVEALED_MINE
+    // Ship -> REVEALED_SHIP
+    // Empty -> REVEALED_EMPTY
+
+    // Prioritize Mine? Yes, a scanner detects the mine.
+    if (cell.hasMine) {
+      // Do NOT consume mine, just reveal it
+      // We can set state to REVEALED_MINE if we want to persist it on board?
+      // Or just return it?
+      // If we want "Fog of War" to remember it, we should update state.
+      // BUT, be careful: if we update state to REVEALED_MINE, can we still attack it?
+      // Yes, receiveAttack should handle REVEALED_MINE. (Added to check above)
+      cell.state = "REVEALED_MINE";
+      return "REVEALED_MINE";
+    }
+
+    if (cell.state === "SHIP") {
+      cell.state = "REVEALED_SHIP";
+      return "REVEALED_SHIP";
+    }
+
+    if (cell.state === "EMPTY") {
+      cell.state = "REVEALED_EMPTY";
+      return "REVEALED_EMPTY";
+    }
+
+    return cell.state;
   }
 
   private getShipCoordinates(start: Coordinates, size: number, horizontal: boolean): Coordinates[] {
@@ -159,7 +229,6 @@ export class Board {
   removeShipByType(type: ShipType): void {
     let shipIdToRemove: string | undefined;
 
-    // Find ship ID by type
     for (const [id, ship] of this.ships) {
       if (ship.type === type) {
         shipIdToRemove = id;
@@ -169,7 +238,6 @@ export class Board {
 
     if (!shipIdToRemove) return;
 
-    // Clear cells
     for (let y = 0; y < GRID_SIZE; y++) {
       for (let x = 0; x < GRID_SIZE; x++) {
         if (this.grid[y][x].shipId === shipIdToRemove) {
@@ -179,14 +247,12 @@ export class Board {
       }
     }
 
-    // Remove from map
     this.ships.delete(shipIdToRemove);
   }
 
   private isValidPlacement(coords: Coordinates[]): boolean {
     for (const { x, y } of coords) {
       if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return false;
-      // Cannot place on non-empty cell OR existing mine
       if (this.grid[y][x].state !== "EMPTY" || this.grid[y][x].hasMine) return false;
     }
     return true;
@@ -207,11 +273,21 @@ export class Board {
   getShipState(id: string): { hits: number; isSunk: boolean } | undefined {
     const ship = this.ships.get(id);
     if (!ship) return undefined;
-    return { hits: ship.hits, isSunk: ship.hits >= ship.size };
+    return { hits: ship.hits, isSunk: ship.isSunk };
   }
 
   getCellState(x: number, y: number): CellState {
     if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return "MISS";
+
+    // Explicit return for mined but hidden cells?
+    // NO! getCellState is used for "what is here right now".
+    // If we want public state, it's different.
+    // NOTE: This Board is mostly internal authorized state.
+    // However, if we just return this.grid[y][x].state, we are good because:
+    // - Mines are hasMine=true but state='EMPTY' until revealed or exploded.
+    // - So a normal getCellState() returns 'EMPTY' for a hidden mine. Correct.
+    // - Only reveal() or receiveAttack() changes state.
+
     return this.grid[y][x].state;
   }
 }

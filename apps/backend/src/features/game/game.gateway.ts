@@ -20,6 +20,7 @@ import type { Server, Socket } from "socket.io";
 // biome-ignore lint/style/useImportType: dependency injection requires value import
 import { GameManagerService } from "./game-manager.service.js";
 import type { Game } from "./domain/Game.js";
+import type { Player } from "./domain/Player.js";
 
 @WebSocketGateway({ cors: true })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -45,21 +46,17 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleCreateGame(@MessageBody() dto: { playerId: string }, @ConnectedSocket() client: Socket) {
     try {
       const playerId = dto.playerId;
-      // Important: Map socket to player so we can track disconnects if needed,
-      // but primarily we rely on the playerId sent in events.
       this.clients.set(client.id, { playerId });
 
       const game = this.gameManager.createGame(playerId);
       game.addPlayer(playerId);
 
       client.join(game.id);
+      this.updateClientGameId(client.id, game.id);
 
-      const clientData = this.clients.get(client.id);
-      if (clientData) clientData.gameId = game.id;
-
-      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+      this.emitGameState(game);
     } catch (error) {
-      client.emit(GameEvents.ERROR, { message: (error as Error).message });
+      this.handleError(client, error);
     }
   }
 
@@ -86,18 +83,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       game.addPlayer(dto.playerId);
       client.join(game.id); // Socket.io rooms
-
-      const clientData = this.clients.get(client.id);
-      if (clientData) clientData.gameId = game.id;
+      this.updateClientGameId(client.id, game.id);
 
       // Auto-start check
       if (game.players.size === 2) {
         game.startGame();
       }
 
-      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+      this.emitGameState(game);
     } catch (error) {
-      client.emit(GameEvents.ERROR, { message: (error as Error).message });
+      this.handleError(client, error);
     }
   }
 
@@ -120,7 +115,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (success) {
       game.checkReady(); // Check if ready to fight
-      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+      this.emitGameState(game);
     } else {
       client.emit(GameEvents.ERROR, { message: "Invalid ship placement" });
     }
@@ -143,7 +138,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const success = player.placeMine(dto.x, dto.y);
     if (success) {
-      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+      this.emitGameState(game);
     } else {
       client.emit(GameEvents.ERROR, { message: "Invalid mine placement" });
     }
@@ -165,7 +160,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`Player ${dto.playerId} is now ready: ${player.isReady}`);
     game.checkReady();
 
-    this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+    this.emitGameState(game);
   }
 
   @SubscribeMessage(GameEvents.ATTACK)
@@ -199,7 +194,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         game.switchTurn();
       }
 
-      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+      this.emitGameState(game);
     }
   }
   @SubscribeMessage(GameEvents.USE_SKILL)
@@ -235,15 +230,51 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const opponentId = Array.from(game.players.keys()).find((id) => id !== dto.playerId);
       const opponent = opponentId ? game.players.get(opponentId) : null;
 
-      if (opponent && opponent.hasLost()) {
+      if (opponent?.hasLost()) {
         await this.gameManager.handleGameOver(game, dto.playerId);
       } else {
         game.switchTurn();
       }
 
-      this.server.to(game.id).emit(GameEvents.GAME_STATE, game.toState());
+      this.emitGameState(game);
     } else {
       client.emit(GameEvents.ERROR, { message: "Skill usage failed (Not enough AP?)" });
+    }
+  }
+
+  /* --- Private Helpers --- */
+
+  private getGameContext(client: Socket): { game: Game; player: Player } | null {
+    const clientData = this.clients.get(client.id);
+    if (!clientData?.gameId) return null;
+
+    const game = this.gameManager.getGame(clientData.gameId);
+    if (!game) return null;
+
+    const player = game.players.get(clientData.playerId); // We stored playerId in clients map too
+    if (!player) return null;
+
+    return { game, player };
+  }
+
+  private updateClientGameId(clientId: string, gameId: string) {
+    const data = this.clients.get(clientId);
+    if (data) data.gameId = gameId;
+  }
+
+  private handleError(client: Socket, error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    client.emit(GameEvents.ERROR, { message });
+  }
+
+  private emitGameState(game: Game) {
+    // Iterate over all connected clients to find those in this game
+    for (const [socketId, data] of this.clients.entries()) {
+      if (data.gameId === game.id) {
+        // Send state visible to THIS player
+        const state = game.toState(data.playerId);
+        this.server.to(socketId).emit(GameEvents.GAME_STATE, state);
+      }
     }
   }
 }
