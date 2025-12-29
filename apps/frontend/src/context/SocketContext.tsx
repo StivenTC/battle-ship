@@ -30,13 +30,11 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     });
 
     newSocket.on("connect", () => {
-      console.log("Socket connected:", newSocket.id);
       setIsConnected(true);
       setConnectionError(null);
     });
 
     newSocket.on("disconnect", () => {
-      console.log("Socket disconnected");
       setIsConnected(false);
     });
 

@@ -13,24 +13,15 @@ export const CombatView = () => {
   const { gameState, playerId, actions } = useGame();
   const { playerName } = useUser();
 
-  // View state: "FRIENDLY" | "ENEMY"
   const [activeView, setActiveView] = useState<"FRIENDLY" | "ENEMY">("ENEMY");
-
-  // Feedback Log State
   const [feedback, setFeedback] = useState<string | null>(null);
-
-  // Detect Turn Change & Hits
   const [prevTurn, setPrevTurn] = useState<string | null>(null);
-
-  // Skill Selection State
   const [selectedSkill, setSelectedSkill] = useState<SkillName | null>(null);
   const [previewCenter, setPreviewCenter] = useState<{ x: number; y: number } | null>(null);
 
-  // Transition Logic & Feedback
   useEffect(() => {
     if (!gameState || !playerId) return;
 
-    // Detect Turn Change
     if (gameState.turn !== prevTurn) {
       if (prevTurn === playerId && gameState.turn !== playerId) {
         setFeedback(TEXTS.COMBAT.FEEDBACK.ATTACK_RESULTS);
@@ -51,7 +42,6 @@ export const CombatView = () => {
     }
   }, [gameState, playerId, prevTurn]);
 
-  // Handle Ghost Preview on Mouse Move
   const handleGridHover = (x: number, y: number) => {
     if (selectedSkill) {
       setPreviewCenter({ x, y });
@@ -66,7 +56,6 @@ export const CombatView = () => {
 
   if (!gameState || !playerId) return null;
 
-  // HANDLE GAME OVER
   if (gameState.winner) {
     const isWinner = gameState.winner === playerId;
     const winnerName = isWinner
@@ -86,14 +75,41 @@ export const CombatView = () => {
   const isMyTurn = gameState.turn === playerId;
   const myPlayer = gameState.players[playerId];
 
-  const turnStatus = isMyTurn ? TEXTS.COMBAT.TURN_MY : TEXTS.COMBAT.TURN_ENEMY;
-  const actionStatus = isMyTurn ? TEXTS.COMBAT.ACTION_MY : TEXTS.COMBAT.ACTION_ENEMY;
+  // Friendly Grid Props
+  // We need to calculate hits/misses on MY grid (detected by opponent)
+  // Opponent hits -> myPlayer.ships.hits
+  // Opponent misses -> myPlayer.misses (The hits received on empty cells)
 
-  // Wrap generic attack action to handle skills if selected
+  const myHits = new Set<string>();
+  const myMisses = new Set<string>();
+
+  // Ships hits
+  for (const s of myPlayer.ships) {
+    for (const h of s.hits) {
+      myHits.add(`${h.x},${h.y}`);
+    }
+  }
+  // My Misses (hits received on empty)
+  if (myPlayer.misses) {
+    for (const m of myPlayer.misses) {
+      myMisses.add(`${m.x},${m.y}`);
+    }
+  }
+
+  const enemyId = Object.keys(gameState.players).find((p) => p !== playerId);
+  const enemy = enemyId ? gameState.players[enemyId] : null;
+
+  const incomingMisses = new Set<string>();
+  if (enemy?.misses) {
+    for (const m of enemy.misses) {
+      incomingMisses.add(`${m.x},${m.y}`);
+    }
+  }
+
   const handleGridClick = (x: number, y: number) => {
     if (selectedSkill) {
       actions.useSkill(selectedSkill, { x, y });
-      setSelectedSkill(null); // Reset after use
+      setSelectedSkill(null);
       setPreviewCenter(null);
       setFeedback(TEXTS.COMBAT.FEEDBACK.SKILL_ACTIVATED(SKILLS[selectedSkill].displayName));
       setTimeout(() => setFeedback(null), 1500);
@@ -106,21 +122,21 @@ export const CombatView = () => {
 
   return (
     <section className={styles.container}>
-      {/* HEADER */}
       <header className={styles.header}>
         <div className={styles.turnIndicator}>
           <span className={clsx(styles.turnBadge, { [styles.myTurn]: isMyTurn })}>
-            {turnStatus}
+            {isMyTurn ? TEXTS.COMBAT.TURN_MY : TEXTS.COMBAT.TURN_ENEMY}
           </span>
         </div>
         <div className={styles.statusLine}>
           {selectedSkill
             ? `SELECCIONA OBJETIVO PARA ${SKILLS[selectedSkill].displayName}`
-            : actionStatus}
+            : isMyTurn
+              ? TEXTS.COMBAT.ACTION_MY
+              : TEXTS.COMBAT.ACTION_ENEMY}
         </div>
       </header>
 
-      {/* GRID AREA */}
       <section className={styles.carouselArea} aria-label="Campo de Batalla">
         {feedback && (
           <div className={styles.feedbackOverlay} role="alert" aria-live="assertive">
@@ -131,7 +147,13 @@ export const CombatView = () => {
         <div className={styles.gridContainer}>
           {activeView === "FRIENDLY" ? (
             <div className={styles.friendlyGrid}>
-              <Grid variant="friendly" />
+              <Grid
+                variant="friendly"
+                ships={myPlayer.ships}
+                mines={myPlayer.placedMines}
+                hits={myHits}
+                misses={incomingMisses} // Show enemy misses on my board
+              />
             </div>
           ) : (
             <div className={styles.enemyGrid} onMouseLeave={handleGridLeave}>
@@ -150,7 +172,6 @@ export const CombatView = () => {
         </div>
       </section>
 
-      {/* ACTION DRAWER */}
       <footer className={styles.actionDrawer}>
         <div className={styles.apDisplay}>
           <span className={styles.apLabel}>⚡</span>
@@ -168,7 +189,6 @@ export const CombatView = () => {
         <div className={styles.skills}>
           {Object.values(SKILLS)
             .filter((skill) => {
-              // Show only if we have the linked ship and it's not sunk
               const ship = myPlayer.ships.find((s) => s.type === skill.linkedShip);
               return ship && !ship.isSunk;
             })
@@ -180,7 +200,6 @@ export const CombatView = () => {
                 disabled={ap < skill.cost}
                 onClick={() => {
                   if (skill.pattern === "GLOBAL_RANDOM_3") {
-                    // Immediate execution for Bombardeo
                     if (ap >= skill.cost) {
                       actions.useSkill(skill.id, { x: 0, y: 0 });
                       setFeedback(TEXTS.COMBAT.FEEDBACK.SKILL_LAUNCHED(skill.displayName));
@@ -192,10 +211,6 @@ export const CombatView = () => {
                   }
                 }}
                 title={skill.description}>
-                {/* 
-                  TODO: Replace with monochrome SVG icons. 
-                  For now, using cleaned up text/emoji. 
-                */}
                 <div style={{ fontSize: "1.2rem", marginBottom: "4px" }}>
                   {skill.id === "DRONE_RECON" && "📡"}
                   {skill.id === "X_IMPACT" && "❌"}

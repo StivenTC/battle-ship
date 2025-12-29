@@ -50,7 +50,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     if (!socket) return;
 
     const onGameState = (state: GameState) => {
-      console.log("GameContext: State Update:", state.status, state);
       setGameState(state);
       setLoading(false);
       setError(null);
@@ -80,7 +79,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
   const joinGame = (gameId: string) => {
     if (!socket || !userId) return;
-    console.log("Frontend emitting JOIN_GAME with ID:", gameId, "Player:", userId);
+
     setLoading(true);
     socket.emit(GameEvents.JOIN_GAME, { gameId, playerId: userId });
   };

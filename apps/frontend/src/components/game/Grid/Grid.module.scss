@@ -9,45 +9,7 @@
   max-width: 100%;
 }
 
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  justify-content: center;
-  margin-bottom: var(--space-4);
-  width: 100%;
-  max-width: 320px;
-}
 
-.button {
-  padding: var(--space-1) var(--space-3);
-  border-radius: 4px; // Hardcoded small radius
-  font-size: 14px; // Hardcoded small font
-  background-color: var(--color-bg-surface);
-  color: var(--color-primary);
-  border: 1px solid var(--color-primary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: color-mix(in srgb, var(--color-primary), transparent 90%);
-  }
-
-  &--active {
-    background-color: var(--color-accent-cyan);
-    color: var(--color-bg-deep);
-    border-color: var(--color-accent-cyan);
-  }
-
-  &--rotate {
-    border-color: var(--color-accent-orange);
-    color: var(--color-accent-orange);
-
-    &:hover {
-      background-color: color-mix(in srgb, var(--color-accent-orange), transparent 90%);
-    }
-  }
-}
 
 .gridWrapper {
   position: relative;
@@ -168,47 +130,4 @@
   }
 }
 
-.readyContainer {
-  margin-bottom: var(--space-2);
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  z-index: 50;
-}
 
-.deployButton {
-  background-color: var(--color-success);
-  color: var(--color-text-primary);
-  border-color: var(--color-success);
-  font-weight: bold;
-  padding: 8px 16px;
-  font-size: 1rem;
-  
-  &:disabled {
-    background-color: var(--color-bg-surface);
-    color: var(--color-text-tertiary);
-    border-color: var(--color-text-tertiary);
-    cursor: not-allowed;
-  }
-
-  &:not(:disabled):hover {
-    background-color: color-mix(in srgb, var(--color-success), black 10%);
-  }
-}
-
-.stateMessage {
-  padding: var(--space-2);
-  background: var(--color-bg-surface);
-  border: 1px solid var(--color-accent-blue);
-  border-radius: 8px;
-  color: var(--color-accent-blue);
-  font-weight: bold;
-  animation: pulse 2s infinite;
-  margin-bottom: var(--space-2);
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.7; }
-  100% { opacity: 1; }
-}

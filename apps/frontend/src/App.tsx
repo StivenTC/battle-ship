@@ -38,11 +38,9 @@ const GameContainer = () => {
 
     switch (gameState.status) {
       case "Placement":
-        console.log("App: Rendering Placement Board");
         return <PlacementBoard onReady={actions.playerReady} />;
       case "Combat":
       case "Finished": // Let CombatView handle the result overlay
-        console.log("App: Rendering Combat View (Combat/Finished)");
         return <CombatView />;
       case "Waiting":
         return <WaitingRoom gameId={gameState.id} />;
