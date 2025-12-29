@@ -118,27 +118,12 @@ export const CombatView = () => {
         {feedback && <div className={styles.feedbackOverlay}>{feedback}</div>}
       </header>
 
-      {/* CAROUSEL / GRID AREA */}
+      {/* GRID AREA */}
       <div className={styles.carouselArea}>
-        <div className={styles.viewToggle}>
-          <button
-            type="button"
-            className={clsx(styles.toggleBtn, { [styles.active]: activeView === "FRIENDLY" })}
-            onClick={() => setActiveView("FRIENDLY")}>
-            🔵
-          </button>
-          <button
-            type="button"
-            className={clsx(styles.toggleBtn, { [styles.active]: activeView === "ENEMY" })}
-            onClick={() => setActiveView("ENEMY")}>
-            🔺
-          </button>
-        </div>
-
         <div className={styles.gridContainer}>
           {activeView === "FRIENDLY" ? (
             <div className={styles.friendlyGrid}>
-              <Grid />
+              <Grid variant="friendly" />
             </div>
           ) : (
             <div className={styles.enemyGrid} onMouseLeave={handleGridLeave}>
@@ -160,7 +145,7 @@ export const CombatView = () => {
       {/* ACTION DRAWER */}
       <footer className={styles.actionDrawer}>
         <div className={styles.apDisplay}>
-          <span className={styles.apLabel}>ENERGÍA (AP)</span>
+          <span className={styles.apLabel}>⚡</span>
           <div className={styles.apBar}>
             {[0, 1, 2, 3, 4, 5].map((slot) => (
               <div
@@ -187,9 +172,9 @@ export const CombatView = () => {
                 disabled={ap < skill.cost}
                 onClick={() => {
                   if (skill.pattern === "GLOBAL_RANDOM_3") {
-                    // Immediate execution for Chaotic Salvo
+                    // Immediate execution for Bombardeo
                     if (ap >= skill.cost) {
-                      actions.useSkill(skill.id, { x: 0, y: 0 }); // Dummy coords
+                      actions.useSkill(skill.id, { x: 0, y: 0 });
                       setFeedback(`${skill.displayName} LANZADA!`);
                       setTimeout(() => setFeedback(null), 1500);
                       setSelectedSkill(null);
@@ -199,7 +184,21 @@ export const CombatView = () => {
                   }
                 }}
                 title={skill.description}>
-                {skill.displayName} ({skill.cost})
+                {/* 
+                  TODO: Replace with monochrome SVG icons. 
+                  For now, using cleaned up text/emoji. 
+                */}
+                <div style={{ fontSize: "1.2rem", marginBottom: "4px" }}>
+                  {skill.id === "DRONE_RECON" && "📡"}
+                  {skill.id === "X_IMPACT" && "❌"}
+                  {skill.id === "CHAOTIC_SALVO" && "💣"}
+                  {skill.id === "SONAR_TORPEDO" && "🚀"}
+                  {skill.id === "REVEALING_SHOT" && "📍"}
+                </div>
+                <div style={{ fontSize: "0.6rem", fontWeight: "bold" }}>
+                  {skill.displayName.split(" (")[0]}
+                </div>
+                <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>{skill.cost} ⚡</div>
               </button>
             ))}
         </div>

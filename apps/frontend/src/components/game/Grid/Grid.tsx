@@ -16,12 +16,13 @@ import styles from "./Grid.module.scss";
 // Placeholder type until we connect it to a parent context
 type GridProps = {
   allowedShips?: ShipType[];
+  variant?: "default" | "friendly" | "enemy";
 };
 
 const CELL_SIZE = 32;
 const GAP_SIZE = 1;
 
-export const Grid: FC<GridProps> = ({ allowedShips }) => {
+export const Grid: FC<GridProps> = ({ allowedShips, variant = "default" }) => {
   const { gameState, playerId, actions } = useGame();
 
   const {
@@ -290,14 +291,18 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
 
     if (myPlayer) {
       // Populate Hits from Ships
-      myPlayer.ships.forEach((ship) => {
-        ship.hits.forEach((h) => hits.add(`${h.x},${h.y}`));
-      });
+      for (const ship of myPlayer.ships) {
+        for (const h of ship.hits) {
+          hits.add(`${h.x},${h.y}`);
+        }
+      }
       // Populate Misses from GameState (exposed by backend)
       // Note: Frontend types might need 'misses' on Player interface.
       // Assuming it's there as per backend Game.ts updates.
       if (myPlayer.misses) {
-        myPlayer.misses.forEach((m: Coordinates) => misses.add(`${m.x},${m.y}`));
+        for (const m of myPlayer.misses) {
+          misses.add(`${m.x},${m.y}`);
+        }
       }
     }
 
@@ -329,7 +334,12 @@ export const Grid: FC<GridProps> = ({ allowedShips }) => {
       {renderControls()}
       {renderReadyButton()}
       <div className={styles.gridWrapper}>
-        <div className={styles.grid} onMouseLeave={handleCellLeave}>
+        <div
+          className={clsx(styles.grid, {
+            [styles.friendly]: variant === "friendly",
+            [styles.enemy]: variant === "enemy",
+          })}
+          onMouseLeave={handleCellLeave}>
           {renderCells()}
           <div className={styles.shipLayer}>{renderShips()}</div>
           <div className={styles.shipLayer}>{renderMines()}</div>

@@ -106,7 +106,7 @@ export const RadarGrid = forwardRef<HTMLDivElement, RadarGridProps>(
     return (
       <div className={styles.container}>
         <div className={styles.gridWrapper}>
-          <div ref={ref} className={clsx(styles.grid, styles.radarGrid)}>
+          <div ref={ref} className={clsx(styles.grid, styles.enemy, styles.radarGrid)}>
             {renderCells()}
           </div>
         </div>

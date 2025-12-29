@@ -56,19 +56,54 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: var(--color-bg-deep);
   margin: 0 auto;
+  perspective: 1000px; // Enable 3D space
+  transition: transform var(--duration-normal), opacity var(--duration-normal);
+
+  &.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+
+  &.inactive {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+    pointer-events: none;
+    position: absolute; // Remove from flow when inactive to overlay
+  }
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(8, 32px);
+  grid-template-columns: repeat(8, 32px); // 8x8 Visuals
   grid-template-rows: repeat(8, 32px);
   gap: 1px;
-  background-color: color-mix(in srgb, var(--color-bg-deep), white 5%);
   position: relative;
-  border: 1px solid var(--color-primary);
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  transition: all var(--duration-normal);
+
+  // BASE THEME (Default / Placement)
+  background-color: var(--color-bg-deep);
+  border: 2px solid var(--color-primary); // Restored and thickened
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+
+  // FRIENDLY THEME (Defense)
+  &.friendly {
+    border-color: var(--color-friendly-accent);
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.15);
+
+    // Grid lines color mix
+    background-color: color-mix(in srgb, var(--color-friendly-bg), var(--color-friendly-accent) 5%);
+  }
+
+  // ENEMY THEME (Attack)
+  &.enemy {
+    border-color: var(--color-enemy-accent);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+    
+    // Grid lines color mix
+    background-color: color-mix(in srgb, var(--color-enemy-bg), var(--color-enemy-accent) 5%);
+  }
 }
 
 .shipLayer {
