@@ -49,12 +49,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.clients.set(client.id, { playerId });
 
       const game = this.gameManager.createGame(playerId);
-      game.addPlayer(playerId);
-
-      client.join(game.id);
-      this.updateClientGameId(client.id, game.id);
-
-      this.emitGameState(game);
+      this.joinPlayerToGame(client, game, playerId);
     } catch (error) {
       this.handleError(client, error);
     }
@@ -81,16 +76,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
       }
 
-      game.addPlayer(dto.playerId);
-      client.join(game.id); // Socket.io rooms
-      this.updateClientGameId(client.id, game.id);
-
-      // Auto-start check
-      if (game.players.size === 2) {
-        game.startGame();
-      }
-
-      this.emitGameState(game);
+      this.joinPlayerToGame(client, game, dto.playerId);
     } catch (error) {
       this.handleError(client, error);
     }
@@ -98,17 +84,13 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(GameEvents.PLACE_SHIP)
   handlePlaceShip(@MessageBody() dto: PlaceShipDto, @ConnectedSocket() client: Socket) {
-    const clientData = this.clients.get(client.id);
-    if (!clientData?.gameId) return;
+    const ctx = this.getGameContext(client);
+    if (!ctx) return;
+    const { game, player } = ctx;
 
-    const game = this.gameManager.getGame(clientData.gameId);
-    if (!game) return;
-
-    const player = game.players.get(dto.playerId);
-    if (!player) return;
-
+    // Validate Placement Phase
     if (game.status !== GameStatus.Placement && game.status !== GameStatus.Waiting) {
-      return client.emit(GameEvents.ERROR, { message: "Not in placement phase" });
+      return this.handleError(client, "Not in placement phase");
     }
 
     const success = player.placeShip(dto.type, dto.size, 1, dto.start, dto.horizontal);
@@ -117,43 +99,33 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       game.checkReady(); // Check if ready to fight
       this.emitGameState(game);
     } else {
-      client.emit(GameEvents.ERROR, { message: "Invalid ship placement" });
+      this.handleError(client, "Invalid ship placement");
     }
   }
 
   @SubscribeMessage(GameEvents.PLACE_MINE)
   handlePlaceMine(@MessageBody() dto: PlaceMineDto, @ConnectedSocket() client: Socket) {
-    const clientData = this.clients.get(client.id);
-    if (!clientData?.gameId) return;
-
-    const game = this.gameManager.getGame(clientData.gameId);
-    if (!game) return;
-
-    const player = game.players.get(dto.playerId);
-    if (!player) return;
+    const ctx = this.getGameContext(client);
+    if (!ctx) return;
+    const { game, player } = ctx;
 
     if (game.status !== GameStatus.Placement) {
-      return client.emit(GameEvents.ERROR, { message: "Not in placement phase" });
+      return this.handleError(client, "Not in placement phase");
     }
 
     const success = player.placeMine(dto.x, dto.y);
     if (success) {
       this.emitGameState(game);
     } else {
-      client.emit(GameEvents.ERROR, { message: "Invalid mine placement" });
+      this.handleError(client, "Invalid mine placement");
     }
   }
 
   @SubscribeMessage(GameEvents.PLAYER_READY)
   handlePlayerReady(@MessageBody() dto: { playerId: string }, @ConnectedSocket() client: Socket) {
-    const clientData = this.clients.get(client.id);
-    if (!clientData?.gameId) return;
-
-    const game = this.gameManager.getGame(clientData.gameId);
-    if (!game) return;
-
-    const player = game.players.get(dto.playerId);
-    if (!player) return;
+    const ctx = this.getGameContext(client);
+    if (!ctx) return;
+    const { game, player } = ctx;
 
     console.log(`Player ${dto.playerId} setting ready...`);
     player.setReady();
@@ -165,18 +137,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(GameEvents.ATTACK)
   async handleAttack(@MessageBody() dto: AttackDto, @ConnectedSocket() client: Socket) {
-    const clientData = this.clients.get(client.id);
-    if (!clientData?.gameId) return;
-
-    const game = this.gameManager.getGame(clientData.gameId);
-    if (!game) return;
+    const ctx = this.getGameContext(client);
+    if (!ctx) return;
+    const { game } = ctx;
 
     if (game.status !== GameStatus.Combat) {
-      return client.emit(GameEvents.ERROR, { message: "Not in combat phase" });
+      return this.handleError(client, "Not in combat phase");
     }
 
     if (game.turn !== dto.playerId) {
-      return client.emit(GameEvents.ERROR, { message: "Not your turn" });
+      return this.handleError(client, "Not your turn");
     }
 
     // Attack Logic
@@ -185,7 +155,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const opponent = game.players.get(opponentId);
 
     if (opponent) {
-      const result = opponent.receiveAttack(dto.x, dto.y);
+      opponent.receiveAttack(dto.x, dto.y);
 
       // CHECK WIN CONDITION
       if (opponent.hasLost()) {
@@ -206,20 +176,18 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     },
     @ConnectedSocket() client: Socket
   ) {
-    const clientData = this.clients.get(client.id);
-    if (!clientData?.gameId) return;
-
-    const game = this.gameManager.getGame(clientData.gameId);
-    if (!game) return;
+    const ctx = this.getGameContext(client);
+    if (!ctx) return;
+    const { game } = ctx;
 
     // Validate Status
     if (game.status !== GameStatus.Combat) {
-      return client.emit(GameEvents.ERROR, { message: "Not in combat phase" });
+      return this.handleError(client, "Not in combat phase");
     }
 
     // Validate Turn
     if (game.turn !== dto.playerId) {
-      return client.emit(GameEvents.ERROR, { message: "Not your turn" });
+      return this.handleError(client, "Not your turn");
     }
 
     const target = dto.target || { x: 0, y: 0 }; // Should be provided
@@ -238,7 +206,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.emitGameState(game);
     } else {
-      client.emit(GameEvents.ERROR, { message: "Skill usage failed (Not enough AP?)" });
+      this.handleError(client, "Skill usage failed (Not enough AP?)");
     }
   }
 
@@ -262,8 +230,22 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (data) data.gameId = gameId;
   }
 
+  private joinPlayerToGame(client: Socket, game: Game, playerId: string) {
+    game.addPlayer(playerId);
+    client.join(game.id);
+    this.updateClientGameId(client.id, game.id);
+
+    // Auto-start check
+    if (game.players.size === 2) {
+      game.startGame();
+    }
+
+    this.emitGameState(game);
+  }
+
   private handleError(client: Socket, error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const message =
+      error instanceof Error ? error.message : typeof error === "string" ? error : "Unknown error";
     client.emit(GameEvents.ERROR, { message });
   }
 

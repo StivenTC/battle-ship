@@ -39,6 +39,10 @@ export interface Ship {
   isSunk: boolean;
 }
 
+export interface RevealedCell extends Coordinates {
+  status: CellState;
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -46,7 +50,8 @@ export interface Player {
   remainingMines: number;
   placedMines: Coordinates[];
   misses: Coordinates[];
-  revealedCells: Coordinates[];
+  hits: Coordinates[]; // Successful hits on opponent
+  revealedCells: RevealedCell[]; // Cells revealed with their content
   ap: number;
   isReady: boolean;
   isConnected: boolean;

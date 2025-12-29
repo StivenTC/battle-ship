@@ -1,5 +1,5 @@
 import { GameStatus } from "@battle-ship/shared";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { Game } from "./domain/Game.js";
 // biome-ignore lint/style/useImportType: dependency injection requires value import
 import { UsersService } from "../users/users.service.js";
@@ -13,7 +13,7 @@ export class GameManagerService {
     // For now, in-memory games map.
   }
 
-  createGame(hostId: string): Game {
+  createGame(_hostId: string): Game {
     let gameId = this.generateRoomCode();
     while (this.games.has(gameId)) {
       gameId = this.generateRoomCode();
@@ -59,6 +59,13 @@ export class GameManagerService {
     if (winnerId) await this.usersService.addWin(winnerId);
     if (loserId) await this.usersService.addLoss(loserId);
 
-    // Keep game in memory for a bit to show results, then maybe clean up?
+    // Keep game in memory for a short period to allow clients to see results
+    setTimeout(
+      () => {
+        this.games.delete(game.id);
+        console.log(`Game ${game.id} cleanup complete.`);
+      },
+      5 * 60 * 1000
+    ); // 5 minutes
   }
 }

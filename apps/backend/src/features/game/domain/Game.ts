@@ -1,14 +1,12 @@
 import {
   type GameState,
   GameStatus,
-  GRID_SIZE,
   SKILLS,
   type SkillName,
-  getSkillAffectedCells,
   type Player as PlayerState,
-  type CellState,
 } from "@battle-ship/shared";
 import { Player } from "./Player.js";
+import { SkillStrategies } from "./SkillStrategies.js";
 
 export class Game {
   public readonly id: string;
@@ -109,13 +107,13 @@ export class Game {
 
     for (const [id, player] of this.players) {
       const isViewer = id === viewerId; // Is this me?
-      const isOpponent = !isViewer; // Is this the enemy?
 
       // Base public info
       const publicPlayer: PlayerState = {
         id: player.id,
         name: player.id,
         misses: player.board.getMisses(),
+        hits: player.hits,
         revealedCells: player.revealedCells,
         ap: player.ap,
         isReady: player.isReady,
@@ -169,94 +167,23 @@ export class Game {
     }
 
     const { x, y } = target || { x: 0, y: 0 };
-    let affectedCells: { x: number; y: number }[] = [];
+    // let affectedCells: { x: number; y: number }[] = [];
 
     // --- LOGIC PER SKILL (Specific) ---
 
-    if (skillConfig.pattern === "SCAN_3X3") {
-      // Logic: REVEAL ONLY (No attack)
-      // 3x3 Center at X,Y
-      affectedCells = getSkillAffectedCells("SCAN_3X3", x, y);
-      for (const cell of affectedCells) {
-        // Get real state from Opponent Board
-        const realState = opponent.board.reveal(cell.x, cell.y); // Use new Board.reveal logic
-        // Update Player (Attacker) vision
-        player.reveal(cell.x, cell.y, realState);
-      }
-      return true;
+    // --- STRATEGY PATTERN EXECUTION ---
+    // Delegating logic to SkillStrategies to keep Entity clean
+    const strategy = SkillStrategies[skillConfig.pattern];
+
+    if (strategy) {
+      strategy(this, player, opponent, { x, y });
+    } else {
+      console.warn(`No strategy found for Pattern: ${skillConfig.pattern}`);
+      // Consider returning false or throwing, but client should prevent this.
+      return false;
     }
 
-    if (skillConfig.pattern === "CROSS_DIAGONAL") {
-      // Logic: Damage Center + 4 Diags
-      affectedCells = getSkillAffectedCells("CROSS_DIAGONAL", x, y);
-      // Fallthrough to ATTACK
-    } else if (skillConfig.pattern === "GLOBAL_RANDOM_3") {
-      // Chaotic Salvo: 3 Random shots on valid coords
-      const available: { x: number; y: number }[] = [];
-      for (let i = 0; i < GRID_SIZE; i++) {
-        for (let j = 0; j < GRID_SIZE; j++) {
-          available.push({ x: i, y: j });
-        }
-      }
-      // Shuffle
-      for (let i = available.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [available[i], available[j]] = [available[j], available[i]];
-      }
-      affectedCells = available.slice(0, 3);
-    } else if (skillConfig.pattern === "LINE_RAY") {
-      // Sonar Torpedo: Vertical Bottom-Up
-      // Starts at y=9, goes to y=0 of the target column x
-      for (let i = GRID_SIZE - 1; i >= 0; i--) {
-        const currentY = i;
-        affectedCells.push({ x, y: currentY });
-
-        const state = opponent.board.getCellState(x, currentY);
-        // Stop if we hit a ship (unrevealed or already hit)
-        if (state === "SHIP" || state === "HIT" || state === "REVEALED_SHIP") {
-          // Note: "REVEALED_SHIP" counts as hittable? Yes.
-          break;
-        }
-
-        // Also stop if we hit a mine?
-        // Sonar Torpedo logic: "Fire a linear torpedo ... until it hits a ship."
-        // Mines are not ships.
-        // But if it hits a mine?
-        // Usually torpedoes explode on mines.
-        // Let's assume yes.
-        if (opponent.placedMines.some((m) => m.x === x && m.y === currentY)) {
-          break;
-        }
-      }
-    } else if (skillConfig.pattern === "SINGLE_REVEAL") {
-      // Revealing Shot: 1x1 Damage.
-      // If IS SHIP -> Reveal All.
-      affectedCells.push({ x, y });
-
-      // Check if hit a ship to trigger Reveal
-      const state = opponent.board.getCellState(x, y);
-      if (state === "SHIP" || state === "REVEALED_SHIP" || state === "HIT") {
-        // Find which ship was hit
-        const hitShip = opponent.ships.find((s) => s.position.some((p) => p.x === x && p.y === y));
-        if (hitShip) {
-          // Reveal all positions
-          for (const p of hitShip.position) {
-            const pState = opponent.board.reveal(p.x, p.y);
-            player.reveal(p.x, p.y, pState);
-          }
-        }
-      }
-    }
-
-    // Execute Attacks (Damage)
-    for (const h of affectedCells) {
-      const outcome = opponent.receiveAttack(h.x, h.y);
-      if (outcome.result === "HIT" || outcome.result === "SUNK") {
-        player.addHit(h.x, h.y);
-      }
-    }
-
-    // Check Winner
+    // Check Winner (Common logic)
     if (opponent.hasLost()) {
       this.winner = player.id;
       this.status = GameStatus.Finished;
