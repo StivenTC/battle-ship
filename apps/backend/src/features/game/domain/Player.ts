@@ -97,33 +97,15 @@ export class Player {
     return false;
   }
 
-  // Check for mines at game start (Trap Logic)
   checkMines(opponentMines: Coordinates[]): void {
     for (const mine of opponentMines) {
-      // We simulate an attack at the mine's location on MY board.
-      // If I have a ship there, it gets hit.
-      // We don't trigger explosions here, just direct hits if landing on a mine.
-      // Actually, game rule says: "Starts damaged".
-      // We can reuse receiveAttack but suppress explosion logic?
-      // Or better: check if my board has a ship at (mine.x, mine.y) and apply damage.
-
-      // Let's use Board's receiveAttack logic but only if it's a ship.
-      // We shouldn't "trigger" the mine on my board because the mine is on the ENEMY board really,
-      // but physically I placed a ship on coordinates X,Y and enemy placed a mine on X,Y.
-      // Wait, "Mines are shared grid"? No, each player has their own grid.
-      // Interpretation:
-      // - I place ships on My Grid.
-      // - I place mines on My Grid? Or Enemy Grid?
-      // - Usually Battleship mines are hidden on YOUR grid, and if enemy shoots there, THEY blow up.
-      // - BUT the user says: "el punto de las minas es que si mi enemigo pone un barco encima de las minas, empezaria el juego golpeado."
-      // - This implies mines are placed on a SHARED coordinate system or predicted placement?
-      // - Ah, if I place a mine at (3,3), and Enemy places a ship at (3,3), Enemy starts damaged.
-      // - This means I place mines on the "Map" thinking "He will put a ship here".
-      // - Correct. So `opponentMines` are the mines *I* placed, checking against *Enemy* ships.
-      // - So `enemy.checkMines(myMines)` is the call.
-
-      const result = this.receiveAttack(mine.x, mine.y);
-      console.log(`Checking Trap at ${mine.x},${mine.y}:`, result);
+      // Logic fix: Only trigger if there is a ship (Trap)
+      // Do not leave "MISS" markers for traps that hit nothing
+      const currentState = this.board.getCellState(mine.x, mine.y);
+      if (currentState === "SHIP") {
+        const result = this.receiveAttack(mine.x, mine.y);
+        console.log(`Trap Hit at ${mine.x},${mine.y}!`, result);
+      }
     }
   }
 
