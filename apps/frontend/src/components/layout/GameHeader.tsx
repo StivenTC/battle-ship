@@ -1,13 +1,12 @@
-import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useUser } from "../../context/UserContext";
 import { useGame } from "../../hooks/useGame";
+import { TEXTS } from "../../constants/texts";
 import styles from "./GameHeader.module.scss";
 
 export const GameHeader = () => {
   const { gameState } = useGame();
   const { playerName } = useUser();
-  const [damageFlash, setDamageFlash] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
 
   // Effect to flash header on damage (placeholder logic based on turn change or hits)
@@ -22,21 +21,24 @@ export const GameHeader = () => {
   };
 
   return (
-    <header className={clsx(styles.header, { [styles.damage]: damageFlash })}>
+    <header className={styles.header}>
       {/* LEFT: Logo */}
       <div className={styles.logoSection}>
-        <h1 className={styles.gameTitle}>BATTLESHIP</h1>
+        <h1 className={styles.gameTitle}>{TEXTS.GAME_TITLE}</h1>
       </div>
 
       {/* CENTER: Room Info */}
       {gameState?.id && (
         <div className={styles.roomSection}>
-          <span className={styles.roomCode}>{copyFeedback ? "¡Copiado!" : gameState.id}</span>
+          <span className={styles.roomCode}>
+            {copyFeedback ? TEXTS.HEADER.COPY_FEEDBACK : gameState.id}
+          </span>
           <button
             type="button"
             className={styles.copyBtn}
             onClick={copyRoomCode}
-            title="Copiar código de sala">
+            aria-label={TEXTS.HEADER.COPY_BTN_TITLE}
+            title={TEXTS.HEADER.COPY_BTN_TITLE}>
             📋
           </button>
         </div>
@@ -44,8 +46,13 @@ export const GameHeader = () => {
 
       {/* RIGHT: Player Info */}
       <div className={styles.playerSection}>
-        <span className={styles.playerName}>{playerName || "Capitán"}</span>
-        <div className={styles.connectionDot} title="Conectado" />
+        <span className={styles.playerName}>{playerName || TEXTS.HEADER.DEFAULT_PLAYER_NAME}</span>
+        <div
+          className={styles.connectionDot}
+          title={TEXTS.HEADER.CONNECTED_TITLE}
+          aria-label={TEXTS.HEADER.CONNECTED_TITLE}
+          role="status"
+        />
       </div>
     </header>
   );

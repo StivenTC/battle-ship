@@ -7,6 +7,7 @@ import { useUser } from "../../../context/UserContext";
 import styles from "./CombatView.module.scss";
 import { SKILLS, type SkillName } from "@battle-ship/shared";
 import { ResultOverlay } from "./ResultOverlay";
+import { TEXTS } from "../../../constants/texts";
 
 export const CombatView = () => {
   const { gameState, playerId, actions } = useGame();
@@ -32,17 +33,17 @@ export const CombatView = () => {
     // Detect Turn Change
     if (gameState.turn !== prevTurn) {
       if (prevTurn === playerId && gameState.turn !== playerId) {
-        setFeedback("Resultados del Ataque...");
+        setFeedback(TEXTS.COMBAT.FEEDBACK.ATTACK_RESULTS);
         setTimeout(() => {
           setActiveView("FRIENDLY");
-          setFeedback("Turno de Defensa");
+          setFeedback(TEXTS.COMBAT.FEEDBACK.DEFENSE_TURN);
           setTimeout(() => setFeedback(null), 1000);
         }, 2500);
       } else if (prevTurn && prevTurn !== playerId && gameState.turn === playerId) {
-        setFeedback("¡TURNO ENEMIGO FINALIZADO!");
+        setFeedback(TEXTS.COMBAT.FEEDBACK.ENEMY_TURN_END);
         setTimeout(() => {
           setActiveView("ENEMY");
-          setFeedback("¡TU TURNO!");
+          setFeedback(TEXTS.COMBAT.FEEDBACK.MY_TURN_START);
           setTimeout(() => setFeedback(null), 1000);
         }, 2500);
       }
@@ -68,7 +69,9 @@ export const CombatView = () => {
   // HANDLE GAME OVER
   if (gameState.winner) {
     const isWinner = gameState.winner === playerId;
-    const winnerName = isWinner ? playerName || "Capitán" : "Flota Enemiga";
+    const winnerName = isWinner
+      ? playerName || TEXTS.HEADER.DEFAULT_PLAYER_NAME
+      : TEXTS.COMBAT.ENEMY_FLEET;
 
     return (
       <ResultOverlay
@@ -83,8 +86,8 @@ export const CombatView = () => {
   const isMyTurn = gameState.turn === playerId;
   const myPlayer = gameState.players[playerId];
 
-  const turnStatus = isMyTurn ? "TU TURNO - ATACAR" : "TURNO ENEMIGO - DEFENDER";
-  const actionStatus = isMyTurn ? "Selecciona una celda enemiga" : "Esperando impacto...";
+  const turnStatus = isMyTurn ? TEXTS.COMBAT.TURN_MY : TEXTS.COMBAT.TURN_ENEMY;
+  const actionStatus = isMyTurn ? TEXTS.COMBAT.ACTION_MY : TEXTS.COMBAT.ACTION_ENEMY;
 
   // Wrap generic attack action to handle skills if selected
   const handleGridClick = (x: number, y: number) => {
@@ -92,7 +95,7 @@ export const CombatView = () => {
       actions.useSkill(selectedSkill, { x, y });
       setSelectedSkill(null); // Reset after use
       setPreviewCenter(null);
-      setFeedback(`${SKILLS[selectedSkill].displayName} ACTIVADO!`);
+      setFeedback(TEXTS.COMBAT.FEEDBACK.SKILL_ACTIVATED(SKILLS[selectedSkill].displayName));
       setTimeout(() => setFeedback(null), 1500);
     } else {
       actions.attack(x, y);
@@ -102,7 +105,7 @@ export const CombatView = () => {
   const ap = myPlayer?.ap || 0;
 
   return (
-    <div className={styles.container}>
+    <section className={styles.container}>
       {/* HEADER */}
       <header className={styles.header}>
         <div className={styles.turnIndicator}>
@@ -118,8 +121,12 @@ export const CombatView = () => {
       </header>
 
       {/* GRID AREA */}
-      <div className={styles.carouselArea}>
-        {feedback && <div className={styles.feedbackOverlay}>{feedback}</div>}
+      <section className={styles.carouselArea} aria-label="Campo de Batalla">
+        {feedback && (
+          <div className={styles.feedbackOverlay} role="alert" aria-live="assertive">
+            {feedback}
+          </div>
+        )}
 
         <div className={styles.gridContainer}>
           {activeView === "FRIENDLY" ? (
@@ -141,7 +148,7 @@ export const CombatView = () => {
             </div>
           )}
         </div>
-      </div>
+      </section>
 
       {/* ACTION DRAWER */}
       <footer className={styles.actionDrawer}>
@@ -176,7 +183,7 @@ export const CombatView = () => {
                     // Immediate execution for Bombardeo
                     if (ap >= skill.cost) {
                       actions.useSkill(skill.id, { x: 0, y: 0 });
-                      setFeedback(`${skill.displayName} LANZADA!`);
+                      setFeedback(TEXTS.COMBAT.FEEDBACK.SKILL_LAUNCHED(skill.displayName));
                       setTimeout(() => setFeedback(null), 1500);
                       setSelectedSkill(null);
                     }
@@ -204,6 +211,6 @@ export const CombatView = () => {
             ))}
         </div>
       </footer>
-    </div>
+    </section>
   );
 };

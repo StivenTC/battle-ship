@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { LobbyScreen } from "./components/game/Lobby/LobbyScreen";
 import { WaitingRoom } from "./components/game/Lobby/WaitingRoom";
-import { Grid } from "./components/game/Grid/Grid";
 import { SocketProvider } from "./context/SocketContext";
 import { UserProvider, useUser } from "./context/UserContext";
 import { SplashScreen } from "./components/startup/SplashScreen/SplashScreen";
@@ -55,7 +54,7 @@ const GameContainer = () => {
   return (
     <div className={styles.appWrapper}>
       <GameHeader />
-      {renderPhase()}
+      <main>{renderPhase()}</main>
     </div>
   );
 };

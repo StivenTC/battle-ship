@@ -2,13 +2,14 @@ import { useState, useCallback } from "react";
 import type { ShipType } from "@battle-ship/shared";
 import { Grid } from "../Grid/Grid";
 import { ShipSelection } from "../Shipyard/ShipSelection";
+import { TEXTS } from "../../../constants/texts";
 import styles from "./PlacementBoard.module.scss";
 
 interface PlacementBoardProps {
   onReady: () => void;
 }
 
-export const PlacementBoard = ({ onReady }: PlacementBoardProps) => {
+export const PlacementBoard = ({ onReady: _onReady }: PlacementBoardProps) => {
   const [selectedShips, setSelectedShips] = useState<ShipType[] | null>(null);
 
   const handleFleetConfirm = useCallback((ships: ShipType[]) => {
@@ -20,13 +21,11 @@ export const PlacementBoard = ({ onReady }: PlacementBoardProps) => {
   }
 
   return (
-    <div className={styles.container}>
-      <h2 className={styles.header}>FASE TÁCTICA</h2>
+    <section className={styles.container}>
+      <h2 className={styles.header}>{TEXTS.PLACEMENT.TITLE}</h2>
       <p className={styles.instruction}>
-        Posiciona tus 3 barcos y 2 minas. <br />
-        <span className={styles.subtext}>
-          Arrastra o pulsa para colocar. Rotar con click derecho o botón.
-        </span>
+        {TEXTS.PLACEMENT.INSTRUCTION_MAIN} <br />
+        <span className={styles.subtext}>{TEXTS.PLACEMENT.INSTRUCTION_SUB}</span>
       </p>
 
       {/* 
@@ -42,6 +41,6 @@ export const PlacementBoard = ({ onReady }: PlacementBoardProps) => {
          We will move the container logic here in the next step, 
          but for step 1 let's just render Grid which has the controls.
       */}
-    </div>
+    </section>
   );
 };

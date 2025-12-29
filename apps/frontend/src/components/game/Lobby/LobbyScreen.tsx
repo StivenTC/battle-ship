@@ -1,5 +1,6 @@
 import type { ChangeEvent, FC } from "react";
 import { useState } from "react";
+import { TEXTS } from "../../../constants/texts";
 import styles from "./LobbyScreen.module.scss";
 
 interface LobbyScreenProps {
@@ -13,8 +14,8 @@ export const LobbyScreen: FC<LobbyScreenProps> = ({ onCreate, onJoin, error, loa
   const [joinId, setJoinId] = useState("");
 
   return (
-    <div className={styles.lobbyWrapper}>
-      <h2 className={styles.title}>Centro de Mando</h2>
+    <section className={styles.lobbyWrapper}>
+      <h2 className={styles.title}>{TEXTS.LOBBY.TITLE}</h2>
 
       {error && <div className={styles.error}>{error}</div>}
 
@@ -24,29 +25,31 @@ export const LobbyScreen: FC<LobbyScreenProps> = ({ onCreate, onJoin, error, loa
           className={`${styles.button} ${styles["button--primary"]}`}
           onClick={onCreate}
           disabled={loading}>
-          {loading ? "Creando..." : "Crear Nueva Partida"}
+          {loading ? TEXTS.LOBBY.CREATING : TEXTS.LOBBY.CREATE_BTN}
         </button>
 
-        <div className={styles.divider}>o</div>
+        <div className={styles.divider}>{TEXTS.LOBBY.DIVIDER}</div>
 
-        <div className={styles.inputGroup}>
+        <form
+          className={styles.inputGroup}
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (joinId) onJoin(joinId);
+          }}>
           <input
             className={styles.input}
             type="text"
-            placeholder="ID de Partida (4 Letras)"
+            placeholder={TEXTS.LOBBY.INPUT_PLACEHOLDER}
+            aria-label="ID de Partida"
             value={joinId}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setJoinId(e.target.value.toUpperCase())}
             maxLength={4}
           />
-          <button
-            type="button"
-            className={styles.button}
-            onClick={() => onJoin(joinId)}
-            disabled={!joinId || loading}>
-            Unirse
+          <button type="submit" className={styles.button} disabled={!joinId || loading}>
+            {TEXTS.LOBBY.JOIN_BTN}
           </button>
-        </div>
+        </form>
       </div>
-    </div>
+    </section>
   );
 };
