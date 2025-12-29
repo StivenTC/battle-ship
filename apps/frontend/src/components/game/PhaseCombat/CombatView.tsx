@@ -115,11 +115,12 @@ export const CombatView = () => {
             ? `SELECCIONA OBJETIVO PARA ${SKILLS[selectedSkill].displayName}`
             : actionStatus}
         </div>
-        {feedback && <div className={styles.feedbackOverlay}>{feedback}</div>}
       </header>
 
       {/* GRID AREA */}
       <div className={styles.carouselArea}>
+        {feedback && <div className={styles.feedbackOverlay}>{feedback}</div>}
+
         <div className={styles.gridContainer}>
           {activeView === "FRIENDLY" ? (
             <div className={styles.friendlyGrid}>
