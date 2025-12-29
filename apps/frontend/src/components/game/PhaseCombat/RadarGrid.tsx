@@ -80,8 +80,11 @@ export const RadarGrid = forwardRef<HTMLDivElement, RadarGridProps>(
           else if (isRevealed(x, y)) {
             // Check if it's a ship
             const isShip = enemy.ships?.some((s) => s.position.some((p) => p.x === x && p.y === y));
+            // Check if it's a mine
+            const isMine = enemy.placedMines?.some((m) => m.x === x && m.y === y);
 
-            state = isShip ? "REVEALED_SHIP" : "REVEALED_EMPTY";
+            if (isMine) state = "REVEALED_MINE" as CellState;
+            else state = isShip ? "REVEALED_SHIP" : "REVEALED_EMPTY";
           }
 
           // Check Ghost

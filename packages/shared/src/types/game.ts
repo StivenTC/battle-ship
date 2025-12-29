@@ -21,7 +21,8 @@ export type CellState =
   | "MISS"
   | "REVEALED"
   | "REVEALED_SHIP"
-  | "REVEALED_EMPTY";
+  | "REVEALED_EMPTY"
+  | "REVEALED_MINE";
 
 export interface Coordinates {
   x: number;

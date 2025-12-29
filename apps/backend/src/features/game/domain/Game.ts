@@ -205,6 +205,11 @@ export class Game {
         if (state === "SHIP") {
           break;
         }
+        // Also stop if we hit a mine (it should be triggered)
+        const hasMine = opponent.placedMines.some((m) => m.x === x && m.y === currentY);
+        if (hasMine) {
+          break;
+        }
       }
     } else if (skillConfig.pattern === "SINGLE_REVEAL") {
       // Revealing Shot: 1x1 Damage.
