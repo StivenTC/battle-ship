@@ -2,18 +2,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  gap: var(--space-8);
   width: 100%;
   max-width: 500px;
-  background: rgba(15, 23, 42, 0.8);
-  padding: 3rem;
+  background: var(--color-bg-surface);
+  padding: var(--space-8);
   border-radius: 1rem;
-  border: 1px solid #334155;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
 }
 
 .title {
-  color: #94a3b8;
+  color: var(--color-text-secondary);
   font-size: 1.25rem;
   letter-spacing: 0.1em;
   font-weight: 600;
@@ -26,9 +26,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, rgba(6,182,212,0) 70%);
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.1) 0%, rgba(34, 211, 238, 0) 70%);
   border-radius: 50%;
-  border: 1px solid rgba(6, 182, 212, 0.3);
+  border: 1px solid rgba(34, 211, 238, 0.3);
 }
 
 .codeDisplay {
@@ -40,18 +40,18 @@
 .codeLabel {
   display: block;
   font-size: 0.75rem;
-  color: #06b6d4;
-  margin-bottom: 0.5rem;
+  color: var(--color-accent-cyan);
+  margin-bottom: var(--space-2);
   font-family: monospace;
 }
 
 .code {
   font-size: 3.5rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--color-text-primary);
   margin: 0;
   letter-spacing: 0.2em;
-  text-shadow: 0 0 20px rgba(6, 182, 212, 0.8);
+  text-shadow: 0 0 20px rgba(34, 211, 238, 0.8);
   font-family: monospace;
 }
 
@@ -72,13 +72,13 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 2px solid #06b6d4;
+  border: 2px solid var(--color-accent-cyan);
   opacity: 0;
   animation: sonarPulse 3s infinite ease-out;
 }
 
 .status {
-  color: #e2e8f0;
+  color: var(--color-primary);
   font-family: monospace;
   animation: blink 2s infinite;
 }
