@@ -19,7 +19,7 @@ export const ResultOverlay = ({ winnerId, winnerName, isVictory, onExit }: Resul
         <p className={styles.subtitle}>
           {isVictory
             ? "¡Has dominado los mares! La flota enemiga ha sido erradicada."
-            : `El ganador es: ${winnerName}. Tu flota ha caído.`}
+            : "¡El enemigo ha prevalecido! Tus naves yacen en el fondo del mar."}
         </p>
 
         <div className={styles.actions}>
