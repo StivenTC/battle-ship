@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { LobbyScreen } from "./components/game/Lobby/LobbyScreen";
-import { WaitingRoom } from "./components/game/Lobby/WaitingRoom";
+import { LobbyScreen } from "./components/game/Lobby/LobbyScreen/LobbyScreen";
+import { WaitingRoom } from "./components/game/Lobby/WaitingRoom/WaitingRoom";
 import { SocketProvider } from "./context/SocketContext";
 import { UserProvider, useUser } from "./context/UserContext";
 import { SplashScreen } from "./components/startup/SplashScreen/SplashScreen";
@@ -9,9 +9,9 @@ import { useGame } from "./hooks/useGame";
 import styles from "./App.module.scss";
 import "./index.scss";
 
-import { CombatView } from "./components/game/PhaseCombat/CombatView";
-import { GameHeader } from "./components/layout/GameHeader";
-import { PlacementBoard } from "./components/game/PhaseTactical/PlacementBoard";
+import { CombatView } from "./components/game/PhaseCombat/CombatView/CombatView";
+import { GameHeader } from "./components/layout/GameHeader/GameHeader";
+import { PlacementBoard } from "./components/game/PhaseTactical/PlacementBoard/PlacementBoard";
 import { GameProvider } from "./context/GameContext";
 
 const GameContainer = () => {

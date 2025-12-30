@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useUser } from "../../context/UserContext";
-import { useGame } from "../../hooks/useGame";
-import { TEXTS } from "../../constants/texts";
+import { useUser } from "../../../context/UserContext";
+import { useGame } from "../../../hooks/useGame";
+import { TEXTS } from "../../../constants/texts";
 import styles from "./GameHeader.module.scss";
 
 export const GameHeader = () => {

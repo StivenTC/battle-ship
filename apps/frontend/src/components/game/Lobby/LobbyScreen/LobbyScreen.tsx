@@ -1,6 +1,6 @@
 import type { ChangeEvent, FC } from "react";
 import { useState } from "react";
-import { TEXTS } from "../../../constants/texts";
+import { TEXTS } from "../../../../constants/texts";
 import styles from "./LobbyScreen.module.scss";
 
 interface LobbyScreenProps {

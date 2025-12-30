@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import clsx from "clsx";
-import { Grid } from "../Grid/Grid";
-import { RadarGrid } from "./RadarGrid";
-import { useGame } from "../../../hooks/useGame";
-import { useUser } from "../../../context/UserContext";
+import { Grid } from "../../Grid/Grid";
+import { RadarGrid } from "../RadarGrid/RadarGrid";
+import { useGame } from "../../../../hooks/useGame";
+import { useUser } from "../../../../context/UserContext";
 import styles from "./CombatView.module.scss";
 import { SKILLS, type SkillName } from "@battle-ship/shared";
-import { ResultOverlay } from "./ResultOverlay";
-import { TEXTS } from "../../../constants/texts";
+import { ResultOverlay } from "../ResultOverlay/ResultOverlay";
+import { TEXTS } from "../../../../constants/texts";
 
 export const CombatView = () => {
   const { gameState, playerId, actions } = useGame();

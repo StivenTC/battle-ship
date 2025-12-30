@@ -1,12 +1,12 @@
 import { useState, useCallback } from "react";
-import type { ShipType } from "@battle-ship/shared";
-import { Grid } from "../Grid/Grid";
-import { ShipSelection } from "../Shipyard/ShipSelection";
-import { ShipControls } from "./ShipControls";
-import { TEXTS } from "../../../constants/texts";
+import { type ShipType, SHIPS_PER_PLAYER, MINES_PER_PLAYER } from "@battle-ship/shared";
+import { Grid } from "../../Grid/Grid";
+import { ShipSelection } from "../../Shipyard/ShipSelection";
+import { ShipControls } from "../ShipControls/ShipControls";
+import { TEXTS } from "../../../../constants/texts";
 import styles from "./PlacementBoard.module.scss";
-import { useBoard } from "../../../hooks/useBoard";
-import { useGame } from "../../../hooks/useGame";
+import { useBoard } from "../../../../hooks/useBoard";
+import { useGame } from "../../../../hooks/useGame";
 
 interface PlacementBoardProps {
   onReady: () => void;
@@ -87,8 +87,8 @@ export const PlacementBoard = ({ onReady: _onReady }: PlacementBoardProps) => {
     return <ShipSelection onConfirm={handleFleetConfirm} />;
   }
 
-  const allShipsPlaced = displayShips.length >= 3;
-  const allMinesPlaced = currentMinesCount >= 2;
+  const allShipsPlaced = displayShips.length >= SHIPS_PER_PLAYER;
+  const allMinesPlaced = currentMinesCount >= MINES_PER_PLAYER;
   const readyToDeploy = allShipsPlaced && allMinesPlaced;
 
   return (

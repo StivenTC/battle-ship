@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { TEXTS } from "../../../constants/texts";
+import { TEXTS } from "../../../../constants/texts";
 import styles from "./WaitingRoom.module.scss";
 
 interface WaitingRoomProps {

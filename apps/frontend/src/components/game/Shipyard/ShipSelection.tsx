@@ -42,8 +42,8 @@ export const ShipSelection = ({ onConfirm }: ShipSelectionProps) => {
               <div className={styles.cardHeader}>
                 <span className={styles.shipName}>{SHIP_NAMES_ES[type]}</span>
                 <div className={styles.sizeIndicator}>
-                  {Array.from({ length: config.size }).map((_, i) => (
-                    <div key={`pip-${type}-${i}`} className={styles.sizePip} />
+                  {Array.from({ length: config.size }, (_, i) => i).map((pipIndex) => (
+                    <div key={`pip-${type}-${pipIndex}`} className={styles.sizePip} />
                   ))}
                 </div>
               </div>

@@ -1,8 +1,8 @@
 import { type CellState, type SkillConfig, getSkillAffectedCells } from "@battle-ship/shared";
-import { useGame } from "../../../hooks/useGame";
-import { Grid } from "../Grid/Grid";
+import { useGame } from "../../../../hooks/useGame";
+import { Grid } from "../../Grid/Grid";
 import { forwardRef } from "react";
-import styles from "../Grid/Grid.module.scss";
+import styles from "../../Grid/Grid.module.scss";
 
 type RadarGridProps = {
   onAttackOverride?: (x: number, y: number) => void;

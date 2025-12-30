@@ -3,6 +3,7 @@ import {
   type Coordinates,
   MAX_AP,
   MINES_PER_PLAYER,
+  SHIPS_PER_PLAYER,
   type Ship,
   type ShipType,
 } from "@battle-ship/shared";
@@ -38,6 +39,9 @@ export class Player {
   }
 
   setReady() {
+    if (this.ships.length !== SHIPS_PER_PLAYER || this.placedMines.length !== MINES_PER_PLAYER) {
+      throw new Error("Cannot set ready: Fleet not fully deployed");
+    }
     this.isReady = true;
   }
 
