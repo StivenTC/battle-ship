@@ -1,15 +1,13 @@
-import type { Coordinates } from "../types/game";
+import type { Coordinates, PatternType } from "../types/game";
 import { GRID_SIZE } from "../constants";
-
-type PatternType = "SCAN_3X3" | "CROSS_DIAGONAL" | "GLOBAL_RANDOM_3" | "LINE_RAY" | "SINGLE_REVEAL";
 
 export function getSkillAffectedCells(pattern: PatternType, cx: number, cy: number): Coordinates[] {
   const cells: Coordinates[] = [];
 
-  if (pattern === "SCAN_3X3") {
-    // 3x3 Area
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
+  if (pattern === "SCAN_2X2") {
+    // 2x2 Area (Top-Left based on click)
+    for (let dy = 0; dy <= 1; dy++) {
+      for (let dx = 0; dx <= 1; dx++) {
         const x = cx + dx;
         const y = cy + dy;
         if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {

@@ -10,8 +10,8 @@ type SkillImplementation = (
 ) => void;
 
 export const SkillStrategies: Record<string, SkillImplementation> = {
-  SCAN_3X3: (_game, attacker, opponent, { x, y }) => {
-    const affectedCells = getSkillAffectedCells("SCAN_3X3", x, y);
+  SCAN_2X2: (_game, attacker, opponent, { x, y }) => {
+    const affectedCells = getSkillAffectedCells("SCAN_2X2", x, y);
     for (const cell of affectedCells) {
       const realState = opponent.board.reveal(cell.x, cell.y);
       attacker.reveal(cell.x, cell.y, realState);

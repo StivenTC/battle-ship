@@ -94,12 +94,19 @@ export type SkillName =
   | "SONAR_TORPEDO"
   | "REVEALING_SHOT";
 
+export type PatternType =
+  | "SCAN_2X2"
+  | "CROSS_DIAGONAL"
+  | "GLOBAL_RANDOM_3"
+  | "LINE_RAY"
+  | "SINGLE_REVEAL";
+
 export interface SkillConfig {
   id: SkillName;
   displayName: string;
   description: string;
   cost: number;
-  pattern: "SCAN_3X3" | "CROSS_DIAGONAL" | "GLOBAL_RANDOM_3" | "LINE_RAY" | "SINGLE_REVEAL";
+  pattern: PatternType;
   linkedShip: ShipType;
 }
 
@@ -107,9 +114,9 @@ export const SKILLS: Record<SkillName, SkillConfig> = {
   DRONE_RECON: {
     id: "DRONE_RECON",
     displayName: "📡 Dron Recon (3)",
-    description: "Revela área 3x3 (Sin daño)",
+    description: "Revela área 2x2 (Sin daño)",
     cost: 3,
-    pattern: "SCAN_3X3",
+    pattern: "SCAN_2X2",
     linkedShip: ShipType.Carrier,
   },
   X_IMPACT: {

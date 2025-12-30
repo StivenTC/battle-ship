@@ -36,7 +36,7 @@
 
 | Barco | Habilidad | Costo | Descripción |
 | :--- | :--- | :--- | :--- |
-| **Portaviones** | `DRON RECON` | 3 AP | Revela área 3x3 (Sin daño). |
+| **Portaviones** | `DRON RECON` | 3 AP | Revela área 2x2. |
 | **Acorazado** | `IMPACTO CRUZADO` | 4 AP | Ataque en 'X' (Centro + 4 diagonales). |
 | **Destructor** | `BOMBARDEO` | 3 AP | 3 disparos aleatorios globales. |
 | **Submarino** | `TORPEDO` | 4 AP | Ataque en línea recta desde un borde. |
