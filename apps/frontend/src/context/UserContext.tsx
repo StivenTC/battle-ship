@@ -28,6 +28,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       storedId = uuidv4();
       localStorage.setItem("user_id", storedId);
     }
+    // storedId is guaranteed to be string here because of the if block
     setUserId(storedId);
 
     setIsLoading(false);

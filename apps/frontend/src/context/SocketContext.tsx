@@ -16,7 +16,7 @@ const SocketContext = createContext<SocketContextType>({
 export const useSocket = () => useContext(SocketContext);
 
 // TODO: Make this configurable via env vars
-const SERVER_URL = "http://localhost:3000";
+const SERVER_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -38,7 +38,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       setIsConnected(false);
     });
 
-    newSocket.on("connect_error", (err) => {
+    newSocket.on("connect_error", (err: Error) => {
       console.error("Socket connection error:", err);
       setIsConnected(false);
       setConnectionError("No se pudo conectar al servidor.");
