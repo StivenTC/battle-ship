@@ -34,7 +34,7 @@ const GameContainer = () => {
 
     switch (gameState.status) {
       case "Placement":
-        return <PlacementBoard onReady={actions.playerReady} />;
+        return <PlacementBoard />;
       case "Combat":
       case "Finished":
         return <CombatView />;

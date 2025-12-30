@@ -7,10 +7,14 @@ interface ResultOverlayProps {
   isVictory: boolean;
   onExit: () => void;
   // Deprecated logs, but keeping interface clean
-  myPlayerId?: string;
 }
 
-export const ResultOverlay = ({ winnerId, winnerName, isVictory, onExit }: ResultOverlayProps) => {
+export const ResultOverlay = ({
+  winnerId: _winnerId,
+  winnerName: _winnerName,
+  isVictory,
+  onExit,
+}: ResultOverlayProps) => {
   return (
     <div className={styles.overlay}>
       <div

@@ -39,7 +39,7 @@
 | **Portaviones** | `DRON RECON` | 3 AP | Revela área 3x3 (Sin daño). |
 | **Acorazado** | `IMPACTO CRUZADO` | 4 AP | Ataque en 'X' (Centro + 4 diagonales). |
 | **Destructor** | `BOMBARDEO` | 3 AP | 3 disparos aleatorios globales. |
-| **Submarino** | `TORPEDO` | 3 AP | Ataque en línea recta desde un borde. |
+| **Submarino** | `TORPEDO` | 4 AP | Ataque en línea recta desde un borde. |
 | **Corbeta** | `BALIZA` | 2 AP | 1x1. Revela todo el barco si impacta. |
 
 ---

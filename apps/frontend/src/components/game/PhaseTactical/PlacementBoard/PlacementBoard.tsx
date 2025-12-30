@@ -8,11 +8,10 @@ import styles from "./PlacementBoard.module.scss";
 import { useBoard } from "../../../../hooks/useBoard";
 import { useGame } from "../../../../hooks/useGame";
 
-interface PlacementBoardProps {
-  onReady: () => void;
-}
+// PlacementBoardProps empty for now or remove if not needed, but let's keep it for future extensibility if strictly required, otherwise remove.
+// Actually, let's just remove the destructuring of _onReady.
 
-export const PlacementBoard = ({ onReady: _onReady }: PlacementBoardProps) => {
+export const PlacementBoard = () => {
   const [selectedShips, setSelectedShips] = useState<ShipType[] | null>(null);
   const { gameState, playerId, actions } = useGame();
 
