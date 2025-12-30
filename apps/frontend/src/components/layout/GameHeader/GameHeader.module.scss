@@ -1,4 +1,4 @@
-@use "../../styles/tokens/mixins" as *;
+@use '../../../styles/tokens/mixins' as *;
 
 .header {
   @include glass-header;
