@@ -9,8 +9,7 @@ export const GameHeader = () => {
   const { playerName } = useUser();
   const [copyFeedback, setCopyFeedback] = useState(false);
 
-  // Effect to flash header on damage (placeholder logic based on turn change or hits)
-  // For now we'll just leave the state ready for future "Event" bus or prop
+  // Future: Event listener to flash header on damage
 
   const copyRoomCode = () => {
     if (gameState?.id) {

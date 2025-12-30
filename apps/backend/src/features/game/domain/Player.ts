@@ -157,9 +157,7 @@ export class Player {
           const boardState = this.board.getShipState(ship.id);
           if (boardState) {
             ship.hits = [];
-
-            // Re-sync hits based on board state matching ship position
-            // Since we don't have exact hit positions from getShipState, we append the current hit if new
+            // Sync hits
             if (!ship.hits.some((h) => h.x === x && h.y === y)) {
               ship.hits.push({ x, y });
             }

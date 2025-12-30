@@ -107,14 +107,9 @@ export class Board {
 
     // Propagate existing state if already hit
     if (cell.state === "HIT" || cell.state === "MISS" || cell.state === "REVEALED_MINE") {
-      // If it was a ship hit, return that info again?
-      // Ideally we don't re-process damage.
       return { result: cell.state === "HIT" ? "HIT" : "MISS" };
     }
 
-    // If it was just revealed but not hit yet?
-    // REVEALED_SHIP -> becomes HIT
-    // REVEALED_EMPTY -> becomes MISS
     if (cell.state === "REVEALED_SHIP") {
       cell.state = "HIT";
       return this.processShipHit(cell);
@@ -208,14 +203,7 @@ export class Board {
     // Ship -> REVEALED_SHIP
     // Empty -> REVEALED_EMPTY
 
-    // Prioritize Mine? Yes, a scanner detects the mine.
     if (cell.hasMine) {
-      // Do NOT consume mine, just reveal it
-      // We can set state to REVEALED_MINE if we want to persist it on board?
-      // Or just return it?
-      // If we want "Fog of War" to remember it, we should update state.
-      // BUT, be careful: if we update state to REVEALED_MINE, can we still attack it?
-      // Yes, receiveAttack should handle REVEALED_MINE. (Added to check above)
       cell.state = "REVEALED_MINE";
       return "REVEALED_MINE";
     }
@@ -296,15 +284,6 @@ export class Board {
 
   getCellState(x: number, y: number): CellState {
     if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return "MISS";
-
-    // Explicit return for mined but hidden cells?
-    // NO! getCellState is used for "what is here right now".
-    // If we want public state, it's different.
-    // NOTE: This Board is mostly internal authorized state.
-    // However, if we just return this.grid[y][x].state, we are good because:
-    // - Mines are hasMine=true but state='EMPTY' until revealed or exploded.
-    // - So a normal getCellState() returns 'EMPTY' for a hidden mine. Correct.
-    // - Only reveal() or receiveAttack() changes state.
 
     return this.grid[y][x].state;
   }

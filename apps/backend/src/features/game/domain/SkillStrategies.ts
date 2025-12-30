@@ -40,7 +40,6 @@ export const SkillStrategies: Record<string, SkillImplementation> = {
   },
 
   LINE_RAY: (_game, attacker, opponent, { x }) => {
-    // Sonar Torpedo: Vertical Bottom-Up
     const affectedCells: { x: number; y: number }[] = [];
     for (let i = GRID_SIZE - 1; i >= 0; i--) {
       const currentY = i;
@@ -60,7 +59,6 @@ export const SkillStrategies: Record<string, SkillImplementation> = {
   },
 
   SINGLE_REVEAL: (_game, attacker, opponent, { x, y }) => {
-    // 1x1 Attack
     executeAttacks(attacker, opponent, [{ x, y }]);
 
     const state = opponent.board.getCellState(x, y);
