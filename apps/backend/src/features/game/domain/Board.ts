@@ -66,8 +66,18 @@ export class Board {
     return true;
   }
 
-  triggerMine(x: number, y: number): { result: "HIT" | "MISS" | "SUNK"; shipId?: string }[] {
-    const affected: { result: "HIT" | "MISS" | "SUNK"; shipId?: string }[] = [];
+  removeMine(x: number, y: number): void {
+    if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+      this.grid[y][x].hasMine = false;
+    }
+  }
+
+  triggerMine(
+    x: number,
+    y: number
+  ): { x: number; y: number; result: "HIT" | "MISS" | "SUNK"; shipId?: string }[] {
+    const affected: { x: number; y: number; result: "HIT" | "MISS" | "SUNK"; shipId?: string }[] =
+      [];
 
     // Cross pattern: Center, Up, Down, Left, Right
     const targets = [
@@ -84,7 +94,7 @@ export class Board {
       // Bounds check for explosion
       if (t.x >= 0 && t.x < GRID_SIZE && t.y >= 0 && t.y < GRID_SIZE) {
         const res = this.damageCell(t.x, t.y);
-        affected.push(res);
+        affected.push({ x: t.x, y: t.y, ...res });
       }
     }
 
@@ -139,7 +149,12 @@ export class Board {
   receiveAttack(
     x: number,
     y: number
-  ): { result: "HIT" | "MISS" | "SUNK"; shipId?: string; mineExploded?: boolean } {
+  ): {
+    result: "HIT" | "MISS" | "SUNK";
+    shipId?: string;
+    mineExploded?: boolean;
+    attacks?: { x: number; y: number; result: "HIT" | "MISS" | "SUNK"; shipId?: string }[];
+  } {
     if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) {
       return { result: "MISS" };
     }
@@ -151,23 +166,26 @@ export class Board {
       console.log(`Mine found at ${x},${y}! BOOM!`);
       cell.hasMine = false; // Consume mine
 
-      // Update state to reflect exploded mine if it was empty?
-      // Or does the explosion turn it into a MISS/HIT?
-      // A mine consumes the cell. If there was no ship, it's a "Mine Hit" spot.
-      // But we need to return valid CellState.
-      // Let's say the center becomes "MISS" visually but we know it was a mine.
-      // Actually, if we want to show "Exploded Mine", we might need a specific state or just handling it in frontend.
-      // For now, let's treat it as damage.
-
       const explosionResults = this.triggerMine(x, y);
 
-      // The center result is what matters for the return value
-      const centerRes = explosionResults[0];
-      return { ...centerRes, mineExploded: true };
+      // The center result is the one matching x,y.
+      // If the mine was on a ship, centerRes will be HIT/SUNK. If empty, MISS (but mine exploded).
+      const centerRes = explosionResults.find((r) => r.x === x && r.y === y);
+
+      const primaryResult = centerRes?.result || "MISS";
+      const primaryShipId = centerRes?.shipId;
+
+      return {
+        result: primaryResult,
+        shipId: primaryShipId,
+        mineExploded: true,
+        attacks: explosionResults,
+      };
     }
 
     // 2. Normal Attack
-    return this.damageCell(x, y);
+    const res = this.damageCell(x, y);
+    return { ...res, attacks: [{ x, y, ...res }] };
   }
 
   // Reveal logic for Scanner

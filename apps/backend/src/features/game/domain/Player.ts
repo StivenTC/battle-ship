@@ -108,24 +108,46 @@ export class Player {
     return false;
   }
 
-  checkMines(opponentMines: Coordinates[]): void {
+  checkMines(
+    opponentMines: Coordinates[]
+  ): { x: number; y: number; result: "HIT" | "MISS" | "SUNK"; shipId?: string }[] {
+    const events: { x: number; y: number; result: "HIT" | "MISS" | "SUNK"; shipId?: string }[] = [];
     for (const mine of opponentMines) {
       const currentState = this.board.getCellState(mine.x, mine.y);
       if (currentState === "SHIP") {
-        const result = this.receiveAttack(mine.x, mine.y);
-        console.log(`Trap Hit at ${mine.x},${mine.y}!`, result);
+        const outcome = this.receiveAttack(mine.x, mine.y);
+        console.log(`Trap Hit at ${mine.x},${mine.y}!`, outcome);
+
+        // If receiveAttack triggered a chain reaction (mine on mine?), capture those too
+        if (outcome.attacks) {
+          events.push(...outcome.attacks);
+        } else {
+          events.push({
+            x: mine.x,
+            y: mine.y,
+            result: outcome.result as "HIT" | "MISS" | "SUNK",
+            shipId: outcome.shipId,
+          });
+        }
       }
     }
+    return events;
   }
 
   receiveAttack(
     x: number,
     y: number
-  ): { result: "HIT" | "MISS" | "SUNK"; shipId?: string; mineExploded?: boolean } {
+  ): {
+    result: "HIT" | "MISS" | "SUNK";
+    shipId?: string;
+    mineExploded?: boolean;
+    attacks?: { x: number; y: number; result: "HIT" | "MISS" | "SUNK"; shipId?: string }[];
+  } {
     const outcome = this.board.receiveAttack(x, y);
 
     // Sync ships with board state, especially important if mine exploded multiple cells
-    if (outcome.mineExploded) {
+    if (outcome.mineExploded || (outcome.attacks && outcome.attacks.length > 0)) {
+      // Since multiple cells might have changed (mine explosion affecting neighbors), full sync is safest
       this.syncShipsWithBoard();
     } else if (outcome.result === "HIT" || outcome.result === "SUNK") {
       // Optimization: For single hit, just update specific ship?

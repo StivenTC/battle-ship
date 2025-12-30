@@ -32,6 +32,7 @@ export const Cell: FC<CellProps> = ({ x, y, state, isGhost, onClick, onMouseEnte
         [styles["cell--revealed-ship"]]: state === "REVEALED_SHIP",
         [styles["cell--revealed-empty"]]: state === "REVEALED_EMPTY",
         [styles["cell--revealed-mine"]]: state === "REVEALED_MINE",
+        [styles["cell--sunk"]]: state === "SUNK",
         [styles["cell--ghost"]]: isGhost, // Visual preview
       })}
       onClick={() => onClick(x, y)}

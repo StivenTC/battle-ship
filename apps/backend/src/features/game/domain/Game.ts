@@ -4,6 +4,7 @@ import {
   SKILLS,
   type SkillName,
   type Player as PlayerState,
+  type CellState,
 } from "@battle-ship/shared";
 import { Player } from "./Player.js";
 import { SkillStrategies } from "./SkillStrategies.js";
@@ -76,8 +77,88 @@ export class Game {
       const p2 = players[1];
 
       console.log("Checking Mine Traps...");
-      p1.checkMines(p2.placedMines);
-      p2.checkMines(p1.placedMines);
+
+      // 0. CHECK MINE COLLISIONS (Mutual Destruction)
+      const p1Mines = p1.placedMines;
+      const p2Mines = p2.placedMines;
+
+      const overlaps = p1Mines.filter((m1) => p2Mines.some((m2) => m2.x === m1.x && m2.y === m1.y));
+
+      for (const ov of overlaps) {
+        console.log(`Mine Collision at ${ov.x},${ov.y}! Mutual destruction.`);
+
+        // Remove mines immediately to prevent other interactions
+        p1.board.removeMine(ov.x, ov.y);
+        p2.board.removeMine(ov.x, ov.y);
+
+        // TRIGGER EXPLOSION ON P2 (Caused by P1's mine)
+        const p2Blast = p2.board.triggerMine(ov.x, ov.y);
+        for (const blast of p2Blast) {
+          // Register Hit on P1's stats (P1 caused this damage)
+          if (blast.result === "HIT" || blast.result === "SUNK") {
+            p1.addHit(blast.x, blast.y);
+          }
+          // Reveal effect to P1
+          p1.reveal(
+            blast.x,
+            blast.y,
+            (blast.result === "SUNK"
+              ? "SUNK"
+              : blast.result === "HIT"
+                ? "HIT"
+                : "MISS") as CellState
+          );
+        }
+
+        // TRIGGER EXPLOSION ON P1 (Caused by P2's mine)
+        const p1Blast = p1.board.triggerMine(ov.x, ov.y);
+        for (const blast of p1Blast) {
+          // Register Hit on P2's stats
+          if (blast.result === "HIT" || blast.result === "SUNK") {
+            p2.addHit(blast.x, blast.y);
+          }
+          // Reveal effect to P2
+          p2.reveal(
+            blast.x,
+            blast.y,
+            (blast.result === "SUNK"
+              ? "SUNK"
+              : blast.result === "HIT"
+                ? "HIT"
+                : "MISS") as CellState
+          );
+        }
+
+        // Explicitly mark the center as REVEALED_MINE so they know WHY it exploded
+        p1.reveal(ov.x, ov.y, "REVEALED_MINE");
+        p2.reveal(ov.x, ov.y, "REVEALED_MINE");
+      }
+
+      // Filter out collided mines for Trap Check
+      const activeP2Mines = p2Mines.filter(
+        (m) => !overlaps.some((o) => o.x === m.x && o.y === m.y)
+      );
+      const activeP1Mines = p1Mines.filter(
+        (m) => !overlaps.some((o) => o.x === m.x && o.y === m.y)
+      );
+
+      // 1. P1 triggers P2's active mines
+      const p1DamageEvents = p1.checkMines(activeP2Mines);
+      for (const evt of p1DamageEvents) {
+        if (evt.result === "HIT" || evt.result === "SUNK") {
+          p2.addHit(evt.x, evt.y);
+        }
+        p2.reveal(evt.x, evt.y, "REVEALED_MINE");
+      }
+
+      // 2. P2 triggers P1's active mines
+      const p2DamageEvents = p2.checkMines(activeP1Mines);
+      for (const evt of p2DamageEvents) {
+        if (evt.result === "HIT" || evt.result === "SUNK") {
+          p1.addHit(evt.x, evt.y);
+        }
+        p1.reveal(evt.x, evt.y, "REVEALED_MINE");
+      }
 
       this.status = GameStatus.Combat;
       this.turnCount = 1;
@@ -200,17 +281,45 @@ export class Game {
 
     if (!player || !opponent) return false;
 
-    // Standard Attack Cost: 1 AP
-    if (!player.spendAP(1)) return false;
+    // Prevent attacking already resolved cells
+    const currentState = opponent.board.getCellState(x, y);
+    if (["HIT", "MISS", "SUNK", "REVEALED_MINE", "REVEALED_EMPTY"].includes(currentState)) {
+      return false;
+    }
+
+    // Standard Attack Cost: 0 AP (Free)
+    // if (!player.spendAP(1)) return false; // Removed per user request
 
     // Execute Attack
     const outcome = opponent.receiveAttack(x, y);
+    console.log(`Attack by ${playerId} at ${x},${y}. Outcome:`, JSON.stringify(outcome));
 
     // Register Stats for Attacker
-    if (outcome.result === "HIT" || outcome.result === "SUNK") {
-      player.addHit(x, y);
-    } else if (outcome.result === "MISS") {
-      player.misses.push({ x, y });
+    // Register Stats for Attacker (Support Chain Reaction)
+    if (outcome.attacks && outcome.attacks.length > 0) {
+      for (const atk of outcome.attacks) {
+        if (atk.result === "HIT" || atk.result === "SUNK") {
+          player.addHit(atk.x, atk.y);
+        } else if (atk.result === "MISS") {
+          player.misses.push({ x: atk.x, y: atk.y });
+        }
+      }
+    } else {
+      // Fallback (Should not happen with new Board logic)
+      if (outcome.result === "HIT" || outcome.result === "SUNK") {
+        player.addHit(x, y);
+      } else if (outcome.result === "MISS") {
+        player.misses.push({ x, y });
+      }
+    }
+
+    // Check Mine Explosion
+    if (outcome.mineExploded) {
+      // Reveal to Attacker that they hit a mine
+      // Note: The board state is already updated (likely empty or damaged).
+      // But we want to explicitly show "You hit a mine".
+      // Add to revealedCells
+      player.reveal(x, y, "REVEALED_MINE");
     }
 
     // Check Win

@@ -113,7 +113,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return this.handleError(client, "Not in placement phase");
     }
 
-    const success = player.placeMine(dto.x, dto.y);
+    const success = player.placeMine(Number(dto.x), Number(dto.y));
     if (success) {
       this.emitGameState(game);
     } else {
@@ -150,7 +150,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     // Attack Logic
-    const success = game.attack(dto.playerId, dto.x, dto.y);
+    const success = game.attack(dto.playerId, Number(dto.x), Number(dto.y));
 
     if (success) {
       if (game.winner) {

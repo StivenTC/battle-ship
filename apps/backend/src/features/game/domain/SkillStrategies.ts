@@ -48,11 +48,13 @@ export const SkillStrategies: Record<string, SkillImplementation> = {
       affectedCells.push({ x, y: currentY });
 
       const state = opponent.board.getCellState(x, currentY);
-      // Stop on impact
-      if (state === "SHIP" || state === "HIT" || state === "REVEALED_SHIP") {
+
+      // Stop on fresh impact only (ignore already HIT wrecks)
+      if (state === "SHIP" || state === "REVEALED_SHIP") {
         break;
       }
-      // Stop on mine
+
+      // Stop on mine (also triggers it)
       if (opponent.placedMines.some((m) => m.x === x && m.y === currentY)) {
         break;
       }
@@ -82,8 +84,32 @@ export const SkillStrategies: Record<string, SkillImplementation> = {
 function executeAttacks(attacker: Player, opponent: Player, targets: { x: number; y: number }[]) {
   for (const h of targets) {
     const outcome = opponent.receiveAttack(h.x, h.y);
-    if (outcome.result === "HIT" || outcome.result === "SUNK") {
-      attacker.addHit(h.x, h.y);
+
+    // Check for chain reaction (Mine Explosion)
+    if (outcome.attacks && outcome.attacks.length > 0) {
+      for (const atk of outcome.attacks) {
+        if (atk.result === "HIT" || atk.result === "SUNK") {
+          attacker.addHit(atk.x, atk.y);
+        } else if (atk.result === "MISS") {
+          attacker.misses.push({ x: atk.x, y: atk.y });
+        }
+        // Determine if we need to reveal mine explicitly?
+        // Board already handles explosions.
+        // If a mine exploded, we should probably reveal it?
+        // outcome.mineExploded is true.
+      }
+    } else {
+      // Fallback for direct attack
+      if (outcome.result === "HIT" || outcome.result === "SUNK") {
+        attacker.addHit(h.x, h.y);
+      } else if (outcome.result === "MISS") {
+        attacker.misses.push({ x: h.x, y: h.y });
+      }
+    }
+
+    // Explicitly Reveal Mine
+    if (outcome.mineExploded) {
+      attacker.reveal(h.x, h.y, "REVEALED_MINE");
     }
   }
 }

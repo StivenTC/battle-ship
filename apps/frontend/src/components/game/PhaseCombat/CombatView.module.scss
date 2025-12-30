@@ -29,7 +29,7 @@
   padding: 0;
 
   &.myTurn {
-    color: var(--color-danger); // User requested Red for attack
+    color: #ef4444; // Explicit Red (Tailwind Red-500)
     text-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
     background: none;
     box-shadow: none;
@@ -42,6 +42,12 @@
   color: var(--color-radar-primary);
   letter-spacing: 1px;
   font-weight: bold;
+  
+  // Prevent layout shift on text change
+  min-height: 1.5rem; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .carouselArea {
@@ -55,83 +61,23 @@
   position: relative;
 }
 
-.viewToggle {
-  display: flex;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
-  z-index: 10;
-}
-
-.toggleBtn {
-  background: transparent;
-  border: 1px solid var(--color-text-tertiary);
-  color: var(--color-text-tertiary);
-  padding: 6px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  transition: all 0.2s;
-
-  &.active {
-    background: var(--color-text-tertiary);
-    color: var(--color-bg-deep);
-    font-weight: bold;
-  }
-}
-
-.gridContainer {
-  width: 100%;
-  max-width: 400px;
-  aspect-ratio: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.friendlyGrid {
-  // border: 4px solid var(--color-accent-cyan); // Removed wrapper border
-  // padding: 4px;
-  // border-radius: 8px;
-  /* Friendly grid styling - now relying on inner grid border */
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.enemyGrid {
-  width: 100%;
-  height: 100%;
-  // border: 4px solid var(--color-accent-orange); // Removed explicit wrapper border
-  // padding: 4px;
-  // background: rgba(255, 0, 0, 0.05);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.placeholderGrid {
-  text-align: center;
-  color: var(--color-accent-orange);
-}
+// ... existing code ...
 
 .feedbackOverlay {
   position: absolute;
-  top: 10px;
+  top: -60px; // Move UP outside the grid area
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.9);
   color: var(--color-accent-orange);
-  padding: 12px 20px; // Slightly smaller
+  padding: 8px 16px; 
   border-radius: 8px;
   border: 1px solid var(--color-accent-orange);
   text-align: center;
   font-weight: bold;
-  z-index: 100;
+  z-index: 200; 
+  width: max-content;
   pointer-events: none;
-  width: auto;
-  min-width: 200px;
   animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 

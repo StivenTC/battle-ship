@@ -14,8 +14,18 @@ export const CombatView = () => {
   const { playerName } = useUser();
 
   const [activeView, setActiveView] = useState<"FRIENDLY" | "ENEMY">("ENEMY");
+  const [hasInitializedView, setHasInitializedView] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [prevTurn, setPrevTurn] = useState<string | null>(null);
+
+  // Initialize View based on whose turn it is
+  useEffect(() => {
+    if (gameState && playerId && !hasInitializedView) {
+      const isMyTurn = gameState.turn === playerId;
+      setActiveView(isMyTurn ? "ENEMY" : "FRIENDLY");
+      setHasInitializedView(true);
+    }
+  }, [gameState, playerId, hasInitializedView]);
   const [selectedSkill, setSelectedSkill] = useState<SkillName | null>(null);
   const [previewCenter, setPreviewCenter] = useState<{ x: number; y: number } | null>(null);
 
@@ -90,21 +100,16 @@ export const CombatView = () => {
     }
   }
   // My Misses (hits received on empty)
+  // myPlayer.misses = Shots I received that missed (from backend Board.getMisses())
+  // Correct for Friendly Grid
   if (myPlayer.misses) {
     for (const m of myPlayer.misses) {
       myMisses.add(`${m.x},${m.y}`);
     }
   }
 
-  const enemyId = Object.keys(gameState.players).find((p) => p !== playerId);
-  const enemy = enemyId ? gameState.players[enemyId] : null;
-
-  const incomingMisses = new Set<string>();
-  if (enemy?.misses) {
-    for (const m of enemy.misses) {
-      incomingMisses.add(`${m.x},${m.y}`);
-    }
-  }
+  // Enemy Misses = Shots I fired that missed (for Radar)
+  // No need to process here for Friendly Grid
 
   const handleGridClick = (x: number, y: number) => {
     if (selectedSkill) {
@@ -152,7 +157,7 @@ export const CombatView = () => {
                 ships={myPlayer.ships}
                 mines={myPlayer.placedMines}
                 hits={myHits}
-                misses={incomingMisses} // Show enemy misses on my board
+                misses={myMisses} // Correct: My received misses
               />
             </div>
           ) : (
@@ -197,7 +202,7 @@ export const CombatView = () => {
                 key={skill.id}
                 type="button"
                 className={clsx(styles.skillBtn, { [styles.active]: selectedSkill === skill.id })}
-                disabled={ap < skill.cost}
+                disabled={ap < skill.cost || !isMyTurn}
                 onClick={() => {
                   if (skill.pattern === "GLOBAL_RANDOM_3") {
                     if (ap >= skill.cost) {
