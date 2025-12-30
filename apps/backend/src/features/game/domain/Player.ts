@@ -21,8 +21,8 @@ export class Player {
   public isReady: boolean;
   public placedMines: Coordinates[];
   public revealedCells: RevealedCell[];
-  public hits: Coordinates[]; // Tracks shots fired by this player at opponent
-  public misses: Coordinates[]; // Tracks shots fired by this player that missed
+  public hits: Coordinates[];
+  public misses: Coordinates[];
 
   constructor(id: string) {
     this.id = id;
@@ -116,9 +116,7 @@ export class Player {
       const currentState = this.board.getCellState(mine.x, mine.y);
       if (currentState === "SHIP") {
         const outcome = this.receiveAttack(mine.x, mine.y);
-        console.log(`Trap Hit at ${mine.x},${mine.y}!`, outcome);
 
-        // If receiveAttack triggered a chain reaction (mine on mine?), capture those too
         if (outcome.attacks) {
           events.push(...outcome.attacks);
         } else {
@@ -145,23 +143,19 @@ export class Player {
   } {
     const outcome = this.board.receiveAttack(x, y);
 
-    // Sync ships with board state, especially important if mine exploded multiple cells
+    // Sync ships with board state
     if (outcome.mineExploded || (outcome.attacks && outcome.attacks.length > 0)) {
-      // Since multiple cells might have changed (mine explosion affecting neighbors), full sync is safest
       this.syncShipsWithBoard();
     } else if (outcome.result === "HIT" || outcome.result === "SUNK") {
-      // Optimization: For single hit, just update specific ship?
-      // But safer to just sync simplisticly if getting ship from ID.
       if (outcome.shipId) {
         const ship = this.ships.find((s) => s.id === outcome.shipId);
         if (ship) {
           const boardState = this.board.getShipState(ship.id);
           if (boardState) {
-            ship.hits = []; // Re-calc hits? Or just push?
-            // Board.getShipState only returns counts.
-            // We need positions.
-            // Simplest is to trust Board has updated correct cell state.
-            // Update local ship hits array:
+            ship.hits = [];
+
+            // Re-sync hits based on board state matching ship position
+            // Since we don't have exact hit positions from getShipState, we append the current hit if new
             if (!ship.hits.some((h) => h.x === x && h.y === y)) {
               ship.hits.push({ x, y });
             }
@@ -174,25 +168,11 @@ export class Player {
     return outcome;
   }
 
-  // Reveal logic now stores STATUS
-  // This is used when *I* am revealed by opponent? No.
-  // This function `reveal` is called on the VICTIM to register they are revealed?
-  // NO! `revealedCells` are cells I HAVE REVEALED on the ENEMY map.
-  // UseSkill calls `opponent.reveal()`.
-  // Wait. `Game.ts` calls `opponent.reveal()`.
-  // Does `opponent` store what *he* has revealed? Or what *has been revealed of him*?
-  // "revealedCells" in GameState usually means "What I can see of the enemy".
-  // SO logic: Player 1 has `revealedCells` -> These are cells on Player 2's board that P1 can see.
-  // CORRECT.
-
-  // So: `reveal(x, y, actualStateOfEnemyCell)`
   reveal(x: number, y: number, state: CellState) {
     const existing = this.revealedCells.find((c) => c.x === x && c.y === y);
     if (!existing) {
       this.revealedCells.push({ x, y, status: state });
     } else {
-      // Update status if changed (e.g. was EMPTY now REVEALED_MINE?)
-      // Or strictly strictly overwrite
       existing.status = state;
     }
   }
@@ -208,8 +188,6 @@ export class Player {
       ship.hits = [];
       for (const pos of ship.position) {
         const state = this.board.getCellState(pos.x, pos.y);
-        // If board says HIT or REVEALED_SHIP (if that counts as hit? No, REVEALED is just visible)
-        // Only HIT counts for damage.
         if (state === "HIT") {
           ship.hits.push(pos);
         }

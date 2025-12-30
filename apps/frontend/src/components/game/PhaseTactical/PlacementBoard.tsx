@@ -40,22 +40,13 @@ export const PlacementBoard = ({ onReady: _onReady }: PlacementBoardProps) => {
   const serverShips = myPlayer?.ships || [];
   const displayShips = serverShips.length > 0 ? serverShips : localShips;
 
-  // Mines logic (Local vs Server)
-  // Server mines might be just a number or array depending on implementation.
-  // Assuming array for visualization similarity.
   const serverMines = myPlayer?.placedMines || [];
   const displayMines = serverMines.length > 0 ? serverMines : localMines;
   const currentMinesCount = displayMines.length;
 
   // HANDLERS
   const handleCellClick = (x: number, y: number) => {
-    // If no type selected, handle removal (Local only for now or Server remove?)
-    // Currently backend doesn't support 'removeShip' directly via socket during placement easily without resetting.
-    // So usually placement is additive until 'Reset' or individualized if supported.
-    // For now, let's keep the existing logic: Only place if selection active.
-
     if (!selection.type) {
-      // Local removal fallback
       if (!myPlayer) {
         const localShip = localShips.find((s) => s.position.some((p) => p.x === x && p.y === y));
         if (localShip) {
@@ -74,7 +65,7 @@ export const PlacementBoard = ({ onReady: _onReady }: PlacementBoardProps) => {
     if (selection.type === "MINE") {
       if (myPlayer) actions.placeMine(x, y);
       else {
-        placeLocalShip(x, y); // placeLocalShip handles mines internally in useBoard if type is MINE? Yes.
+        placeLocalShip(x, y);
         // Sync if needed
         if (gameState && !myPlayer) actions.placeMine(x, y);
       }
@@ -96,7 +87,6 @@ export const PlacementBoard = ({ onReady: _onReady }: PlacementBoardProps) => {
     return <ShipSelection onConfirm={handleFleetConfirm} />;
   }
 
-  // Ready State Check
   const allShipsPlaced = displayShips.length >= 3;
   const allMinesPlaced = currentMinesCount >= 2;
   const readyToDeploy = allShipsPlaced && allMinesPlaced;

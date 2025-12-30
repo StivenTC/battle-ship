@@ -18,7 +18,6 @@ export const CombatView = () => {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [prevTurn, setPrevTurn] = useState<string | null>(null);
 
-  // Initialize View based on whose turn it is
   useEffect(() => {
     if (gameState && playerId && !hasInitializedView) {
       const isMyTurn = gameState.turn === playerId;
@@ -26,6 +25,7 @@ export const CombatView = () => {
       setHasInitializedView(true);
     }
   }, [gameState, playerId, hasInitializedView]);
+
   const [selectedSkill, setSelectedSkill] = useState<SkillName | null>(null);
   const [previewCenter, setPreviewCenter] = useState<{ x: number; y: number } | null>(null);
 
@@ -53,11 +53,7 @@ export const CombatView = () => {
   }, [gameState, playerId, prevTurn]);
 
   const handleGridHover = (x: number, y: number) => {
-    if (selectedSkill) {
-      setPreviewCenter({ x, y });
-    } else {
-      setPreviewCenter(null);
-    }
+    setPreviewCenter(selectedSkill ? { x, y } : null);
   };
 
   const handleGridLeave = () => {
@@ -85,31 +81,21 @@ export const CombatView = () => {
   const isMyTurn = gameState.turn === playerId;
   const myPlayer = gameState.players[playerId];
 
-  // Friendly Grid Props
-  // We need to calculate hits/misses on MY grid (detected by opponent)
-  // Opponent hits -> myPlayer.ships.hits
-  // Opponent misses -> myPlayer.misses (The hits received on empty cells)
-
+  // Calculate friendly grid state derived from server state
   const myHits = new Set<string>();
   const myMisses = new Set<string>();
 
-  // Ships hits
   for (const s of myPlayer.ships) {
     for (const h of s.hits) {
       myHits.add(`${h.x},${h.y}`);
     }
   }
-  // My Misses (hits received on empty)
-  // myPlayer.misses = Shots I received that missed (from backend Board.getMisses())
-  // Correct for Friendly Grid
+
   if (myPlayer.misses) {
     for (const m of myPlayer.misses) {
       myMisses.add(`${m.x},${m.y}`);
     }
   }
-
-  // Enemy Misses = Shots I fired that missed (for Radar)
-  // No need to process here for Friendly Grid
 
   const handleGridClick = (x: number, y: number) => {
     if (selectedSkill) {
@@ -157,7 +143,7 @@ export const CombatView = () => {
                 ships={myPlayer.ships}
                 mines={myPlayer.placedMines}
                 hits={myHits}
-                misses={myMisses} // Correct: My received misses
+                misses={myMisses}
               />
             </div>
           ) : (

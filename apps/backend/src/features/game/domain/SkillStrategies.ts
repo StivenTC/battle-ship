@@ -40,7 +40,6 @@ export const SkillStrategies: Record<string, SkillImplementation> = {
   },
 
   LINE_RAY: (_game, attacker, opponent, { x }) => {
-    // Target Y is ignored for ray origin usually, or used?
     // Sonar Torpedo: Vertical Bottom-Up
     const affectedCells: { x: number; y: number }[] = [];
     for (let i = GRID_SIZE - 1; i >= 0; i--) {
@@ -49,12 +48,10 @@ export const SkillStrategies: Record<string, SkillImplementation> = {
 
       const state = opponent.board.getCellState(x, currentY);
 
-      // Stop on fresh impact only (ignore already HIT wrecks)
       if (state === "SHIP" || state === "REVEALED_SHIP") {
         break;
       }
 
-      // Stop on mine (also triggers it)
       if (opponent.placedMines.some((m) => m.x === x && m.y === currentY)) {
         break;
       }
@@ -66,7 +63,6 @@ export const SkillStrategies: Record<string, SkillImplementation> = {
     // 1x1 Attack
     executeAttacks(attacker, opponent, [{ x, y }]);
 
-    // If hit ship, reveal whole ship
     const state = opponent.board.getCellState(x, y);
     if (state === "SHIP" || state === "REVEALED_SHIP" || state === "HIT") {
       const hitShip = opponent.ships.find((s) => s.position.some((p) => p.x === x && p.y === y));
@@ -85,7 +81,6 @@ function executeAttacks(attacker: Player, opponent: Player, targets: { x: number
   for (const h of targets) {
     const outcome = opponent.receiveAttack(h.x, h.y);
 
-    // Check for chain reaction (Mine Explosion)
     if (outcome.attacks && outcome.attacks.length > 0) {
       for (const atk of outcome.attacks) {
         if (atk.result === "HIT" || atk.result === "SUNK") {
@@ -93,10 +88,6 @@ function executeAttacks(attacker: Player, opponent: Player, targets: { x: number
         } else if (atk.result === "MISS") {
           attacker.misses.push({ x: atk.x, y: atk.y });
         }
-        // Determine if we need to reveal mine explicitly?
-        // Board already handles explosions.
-        // If a mine exploded, we should probably reveal it?
-        // outcome.mineExploded is true.
       }
     } else {
       // Fallback for direct attack
@@ -107,7 +98,6 @@ function executeAttacks(attacker: Player, opponent: Player, targets: { x: number
       }
     }
 
-    // Explicitly Reveal Mine
     if (outcome.mineExploded) {
       attacker.reveal(h.x, h.y, "REVEALED_MINE");
     }

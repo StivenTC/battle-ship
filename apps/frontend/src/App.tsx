@@ -12,18 +12,14 @@ import "./index.scss";
 import { CombatView } from "./components/game/PhaseCombat/CombatView";
 import { GameHeader } from "./components/layout/GameHeader";
 import { PlacementBoard } from "./components/game/PhaseTactical/PlacementBoard";
-// LobbyScreen imported above
-// Grid is no longer imported directly here
-
-// ... imports
+import { GameProvider } from "./context/GameContext";
 
 const GameContainer = () => {
   const { gameState, error, loading, actions } = useGame();
   const { playerName } = useUser();
 
-  if (!playerName) return null; // Wait for identity
+  if (!playerName) return null;
 
-  // Helper to render current phase
   const renderPhase = () => {
     if (!gameState) {
       return (
@@ -40,7 +36,7 @@ const GameContainer = () => {
       case "Placement":
         return <PlacementBoard onReady={actions.playerReady} />;
       case "Combat":
-      case "Finished": // Let CombatView handle the result overlay
+      case "Finished":
         return <CombatView />;
       case "Waiting":
         return <WaitingRoom gameId={gameState.id} />;
@@ -56,8 +52,6 @@ const GameContainer = () => {
     </div>
   );
 };
-
-import { GameProvider } from "./context/GameContext";
 
 function App() {
   const [splashFinished, setSplashFinished] = useState(false);
